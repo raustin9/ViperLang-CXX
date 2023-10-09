@@ -1,0 +1,7 @@
+-Icompiler
+-Icompiler/src
+-shared
+-fPIC
+-fdeclspec
+-DH_PLATFORM_LINUX
+-D_DEBUG
