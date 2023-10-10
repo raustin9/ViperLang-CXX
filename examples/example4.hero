@@ -1,0 +1,20 @@
+interface :: Person {
+    int :: age;
+    float :: height;
+
+    proc void :: print();
+    proc self :: create();
+}
+
+impl Person {
+    proc self :: create() {
+        self.age = 0;
+        self.height = 0;
+
+        return self;
+    }
+
+    proc void :: print() {
+        print(self.name + " " + self.height);
+    }
+}

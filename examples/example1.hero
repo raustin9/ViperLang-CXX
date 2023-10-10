@@ -1,4 +1,9 @@
-let int :: global_int = 0;
+// Single line comment
+let int :: global_int = 0; // Single line comment at end of file
 let bool :: global_bool = true;
+/*
+Multi line comment
+*
+*/
 let byte :: global_byte = 0;
 let float :: global_float = 0;

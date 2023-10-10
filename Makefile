@@ -9,10 +9,10 @@ all: $(COMPILER)Makefile $(TESTBED)Makefile
 	(cd $(TESTBED); make)
 
 run: 
-	./bin/testbed
+	./bin/testbed examples/example1.hero
 
 rerun: all
-	./bin/testbed
+	./bin/testbed examples/example1.hero
 
 clean: 
 	rm -f bin/* 

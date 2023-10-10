@@ -5,3 +5,7 @@ interface :: person {
 
     proc void :: print();
 }
+
+proc :: entry main() {
+    let int :: x = 0;
+}
