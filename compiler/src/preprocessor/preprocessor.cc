@@ -5,6 +5,7 @@
  */
 Preprocessor::Preprocessor(std::string &source_code) {
     _code = source_code;
+    _transformed_code = "";
 }
 
 /*
@@ -34,7 +35,38 @@ Preprocessor::get_transformed() {
 // This is done by simply removing them from the source code
 void
 Preprocessor::process_comments() {
-    
+    char current;
+    for (size_t i = 0; i < _code.length(); i++) {
+        current = _code[i];
+        switch(current) {
+            case '/':
+                if (i < _code.length()-1) {
+                    if (_code[i+1] == '/') {
+                        // Found '//' -- single line comment
+                        while (_code[i] != '\n') 
+                            i++;
+                    } else if (_code[i+1] == '*') {
+                        // Found '/*' -- multi line comment
+                        while (1) {
+                            if (_code[i] == '*' && i < _code.length()-1) {
+                                if (_code[i+1] == '/') {
+                                    // Found '*/' -- end multi-line comment
+                                    i += 2;
+                                    break;
+                                }
+                            } else if (i == _code.length()-1) {
+                                break;
+                            }
+                            i++;
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+        _transformed_code.push_back(_code[i]);
+    }
 }
 
 // Process macros in the source code

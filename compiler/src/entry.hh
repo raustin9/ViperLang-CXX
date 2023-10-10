@@ -20,5 +20,5 @@ main(int argc, char** argv) {
     std::cout << "Original source code:" << std::endl << preprocessor.get_source();
     preprocessor.process_comments();
     
-    std::cout << "Transformed source code:" << std::endl << preprocessor.get_transformed();
+    std::cout << std::endl << "Transformed source code:" << std::endl << preprocessor.get_transformed();
 }

@@ -5,5 +5,5 @@ let bool :: global_bool = true;
 Multi line comment
 *
 */
-let byte :: global_byte = 0;
+let /* inline multi line comment */ byte :: global_byte = 0;
 let float :: global_float = 0;
