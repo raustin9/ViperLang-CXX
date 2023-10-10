@@ -1,0 +1,3 @@
+proc int :: function() {
+    return 1;
+}

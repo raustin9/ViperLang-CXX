@@ -1,0 +1,7 @@
+interface :: person {
+    int :: age;
+    float :: weight;
+    float :: height;
+
+    proc void :: print();
+}

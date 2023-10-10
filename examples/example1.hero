@@ -1,0 +1,4 @@
+let int :: global_int = 0;
+let bool :: global_bool = true;
+let byte :: global_byte = 0;
+let float :: global_float = 0;
