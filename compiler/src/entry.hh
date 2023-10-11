@@ -5,7 +5,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <string>
+#include <vector>
 
-HAPI void hello_world();
-
+// Test function to test preprocessor output
 HAPI std::string test_preprocessor(char* source_name);
