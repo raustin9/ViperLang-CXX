@@ -18,7 +18,7 @@
 
 class Preprocessor {
     public:
-        Preprocessor(std::string &source_code);
+        Preprocessor(std::string source_code);
         ~Preprocessor();
         Preprocessor(const Preprocessor&) = delete;
         Preprocessor& operator= (const Preprocessor&) = delete;
@@ -35,4 +35,12 @@ class Preprocessor {
     private:
         std::string _code;
         std::string _transformed_code;
+        char _cur_char;
+        int _position;
+        int _read_position;
+
+        void _advance_char();
+        char _peek_char();
+        void _single_line_comment();
+        void _multi_line_comment();
 };

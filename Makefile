@@ -8,10 +8,13 @@ all: $(COMPILER)Makefile $(TESTBED)Makefile
 	echo "Building testbed..."
 	(cd $(TESTBED); make)
 
-run: 
+run: all 
 	./bin/testbed examples/example1.hero
 
 rerun: all
+	./bin/testbed examples/example1.hero
+
+test-lex: all
 	./bin/testbed examples/example1.hero
 
 clean: 

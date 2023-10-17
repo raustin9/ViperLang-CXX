@@ -3,9 +3,11 @@
 /*
  * CONSTRUCTOR
  */
-Preprocessor::Preprocessor(std::string &source_code) {
+Preprocessor::Preprocessor(std::string source_code) {
     _code = source_code;
-    _transformed_code = "";
+    _transformed_code = source_code;
+    _position = 0;
+    _read_position = 0;
 }
 
 /*
@@ -31,43 +33,79 @@ Preprocessor::get_transformed() {
     return _transformed_code;
 }
 
+char
+Preprocessor::_peek_char() {
+    if (_read_position >= _transformed_code.length()) {
+        return '\0';
+    } else {
+        return _transformed_code[_read_position];
+    }
+}
+
 // Process comments in the source code
 // This is done by simply removing them from the source code
 void
 Preprocessor::process_comments() {
-    char current;
-    for (size_t i = 0; i < _code.length(); i++) {
-        current = _code[i];
-        switch(current) {
+    _advance_char();
+    // _advance_char();
+    while (_cur_char != '\0') {
+        switch(_cur_char) {
             case '/':
-                if (i < _code.length()-1) {
-                    if (_code[i+1] == '/') {
-                        // Found '//' -- single line comment
-                        while (_code[i] != '\n') 
-                            i++;
-                    } else if (_code[i+1] == '*') {
-                        // Found '/*' -- multi line comment
-                        while (1) {
-                            if (_code[i] == '*' && i < _code.length()-1) {
-                                if (_code[i+1] == '/') {
-                                    // Found '*/' -- end multi-line comment
-                                    i += 2;
-                                    break;
-                                }
-                            } else if (i == _code.length()-1) {
-                                break;
-                            }
-                            i++;
-                        }
-                    }
+                if (_peek_char() == '/') {
+                    printf("SINGlE LINE\n");
+                    _single_line_comment();
+                } else if (_peek_char() == '*') {
+                    _multi_line_comment();
                 }
                 break;
             default:
                 break;
         }
-        _transformed_code.push_back(_code[i]);
+
+        _advance_char();
     }
 }
+
+void
+Preprocessor::_advance_char() {
+    if (_read_position >= _transformed_code.length()) {
+        _cur_char = '\0';
+    } else {
+        _cur_char = _transformed_code[_read_position];
+    }
+
+    _position = _read_position;
+    _read_position++;
+    return;
+}
+
+void
+Preprocessor::_single_line_comment() {
+    while (_cur_char != '\n') {
+        _transformed_code[_position] = ' ';
+        _advance_char();
+    }
+}
+
+void
+Preprocessor::_multi_line_comment() {
+    while (true) {
+        if (_cur_char == '*') {
+            if (_peek_char() == '/') {
+                _transformed_code[_position] = ' ';
+                _advance_char();
+                _transformed_code[_position] = ' ';
+                _advance_char();
+                break;
+            }
+        }
+
+        _transformed_code[_position] = ' ';
+        _advance_char();
+    }
+
+}
+
 
 // Process macros in the source code
 // This is done by inserting them into the transformed source code

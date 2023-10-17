@@ -27,6 +27,9 @@ typedef enum Token {
     TOK_BOOL,   // "bool"
     TOK_BYTE,   // "byte"
                 
+    TOK_NUMINT,   // integer literal
+    TOK_NUMFLOAT, // float literal
+                
     // Boolean types
     TOK_TRUE,   // "true"
     TOK_FALSE,  // "false"
@@ -39,7 +42,7 @@ typedef enum Token {
     TOK_DIV,        // "/" arithmetic division
     TOK_MOD,        // "%" arithmetic modulus
     TOK_LSHIFT,     // "<<" binary left shift
-    TOK_RSHIT,      // ">>" binary right shift
+    TOK_RSHIFT,     // ">>" binary right shift
     TOK_PLUSEQ,     // "+=" adds then assigns
     TOK_MINUSEQ,    // "-="
     TOK_TIMESEQ,    // "*="
@@ -49,6 +52,7 @@ typedef enum Token {
     TOK_RSHIFTEQ,   // ">>="
 
     TOK_DOT,        // "." used to call internal functions of an interface
+    TOK_COMMA,      // "," used to separate identifiers 
 
     TOK_BINARY_NOT, // "~" performs binary not
     TOK_BINARY_OR,  // "|" performs binary or
@@ -78,11 +82,19 @@ typedef enum Token {
     TOK_LPAREN,     // "("
     TOK_RSQUARE,    // "]"
     TOK_LSQUARE,    // "["
-    
+    TOK_SEMICOLON,  // ";"
+ 
+    TOK_INVALID,    // for invalid reads
+    TOK_EOF,        // end of file
     TOK_MAX_TOK
 } token_e;
 
 typedef struct TokenValue {
     token_e tok;
     std::string literal;
+    size_t line_num;
 } token_t;
+
+token_t create_token(std::string literal, token_e token, size_t line_num);
+
+void print_token(token_t tok);
