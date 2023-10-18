@@ -18,3 +18,7 @@ impl Person {
         print(self.name + " " + self.height);
     }
 }
+
+proc :: entry main() {
+    struct Person :: p = Person.create();
+}

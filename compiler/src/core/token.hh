@@ -16,6 +16,9 @@ typedef enum Token {
     TOK_INTERFACE,  // "interface"
     TOK_MUT,        // "mut"
     TOK_CONST,      // "const"
+    TOK_STRUCT,
+    TOK_SELF,
+
     TOK_IDENT,      // for identifiers like procedure, interface, and variable names
     TOK_IMPL,       // "impl" used for declaring block of code for interface implementation
     TOK_DECL,       // "::"
@@ -53,6 +56,7 @@ typedef enum Token {
 
     TOK_DOT,        // "." used to call internal functions of an interface
     TOK_COMMA,      // "," used to separate identifiers 
+    TOK_QUOTE,      // """ used for string literals 
 
     TOK_BINARY_NOT, // "~" performs binary not
     TOK_BINARY_OR,  // "|" performs binary or

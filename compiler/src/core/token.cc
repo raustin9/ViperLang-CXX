@@ -5,6 +5,8 @@ std::string token_strings[] = {
     "TOK_INTERFACE", 
     "TOK_MUT",      
     "TOK_CONST",   
+    "TOK_STRUCT",
+    "TOK_SELF",
     "TOK_IDENT",  
     "TOK_IMPL",  
     "TOK_DECL", 
@@ -39,6 +41,7 @@ std::string token_strings[] = {
 
     "TOK_DOT",        
     "TOK_COMMA",      
+    "TOK_QUOTE",      
 
     "TOK_BINARY_NOT",
     "TOK_BINARY_OR",  

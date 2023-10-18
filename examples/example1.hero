@@ -1,4 +1,4 @@
-// Single line comment
+// single line
 const int :: global_int = 0; // Single line comment at end of file
 const bool :: global_bool = true;
 /*

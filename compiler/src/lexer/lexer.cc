@@ -9,6 +9,8 @@ Lexer::Lexer(const std::string& code)  : _source_code(code)  {
     _keywords["proc"] = TOK_PROC;
     _keywords["interface"] = TOK_INTERFACE;
     _keywords["mut"] = TOK_MUT;
+    _keywords["struct"] = TOK_STRUCT;
+    _keywords["self"] = TOK_SELF;
     _keywords["const"] = TOK_CONST;
     _keywords["impl"] = TOK_IMPL;
     _keywords["void"] = TOK_VOID;
@@ -29,7 +31,7 @@ Lexer::~Lexer() {
 void
 Lexer::tokenize_input() {
     _read_char();
-    _read_char();
+    // _read_char();
     token_t tok;
     while (tok.tok != TOK_EOF) {
         tok = _get_next_token();
@@ -156,6 +158,9 @@ Lexer::_get_next_token() {
             } else {
                 tok = create_token("&", TOK_BINARY_AND, _line_num);
             }
+            break;
+        case '"':  // "::"
+            tok = create_token("\"", TOK_QUOTE, _line_num);
             break;
         case '^':  // "::"
             tok = create_token("^", TOK_BINARY_XOR, _line_num);
