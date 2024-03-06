@@ -1,9 +1,0 @@
-// single line
-const int :: global_int = 0; // Single line comment at end of file
-const bool :: global_bool = true;
-/*
-Multi line comment
-*
-*/
-const /* inline multi line comment */ byte :: global_byte = 0;
-const float :: global_float = 0;

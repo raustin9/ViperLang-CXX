@@ -1,37 +1,35 @@
-# Build the entire project
-COMPILER=compiler/
-TESTBED=testbed/
+CC=g++
+CFLAGS=-std=c++20
+INCLUDES=-Iserver/src -Iserver
+LDFLAGS=
+OBJ_DIR := obj
+ASSEMBLY := server
 
-all: $(COMPILER)Makefile $(TESTBED)Makefile
-	echo "Building compiler..."
-	(cd $(COMPILER); make)
-	echo "Building testbed..."
-	(cd $(TESTBED); make)
+SRC_FILES := $(shell find $(ASSEMBLY) -name *.cc)
+DIRECTORIES := $(shell find $(ASSEMBLY) -type d)
+OBJ_FILES := $(SRC_FILES:%=$(OBJ_DIR)/%.o)
 
-run: all 
-	./bin/testbed examples/example1.hero
+# Main targets
+all: scaffold bin/server
+	
+run: scaffold bin/server 
+	./bin/server
 
-rerun: all
-	./bin/testbed examples/example1.hero
+clean:
+	rm -rf bin/* obj/* 
 
-# Test suite
-lex-test: all
-	./bin/lexer examples/example1.hero
+scaffold:
+	@echo Scaffolding folder structure
+	@mkdir -p $(addprefix $(OBJ_DIR)/,$(DIRECTORIES))
+	@echo Done.
 
-pre-test: all
-	./bin/preprocessor examples/example1.hero
+bin/server: $(OBJ_FILES)
+	$(CC) $(CFLAGS) $(OBJ_FILES) -o $@ $(LDFLAGS)
 
-parser-test: all
-	./bin/parser examples/example1.hero
+$(OBJ_DIR)/%.cc.o: %.cc
+	@echo $<...
+	$(CC) $< $(CFLAGS) -c -o $@ $(INCLUDES) $(LDFLAGS)
 
-code-test: all
-	./bin/codegen examples/example1.hero
 
-test-all: all
-	./bin/preprocessor examples/example1.hero
-	./bin/lexer examples/example1.hero
-	./bin/parser examples/example1.hero
-	./bin/codegen examples/example1.hero
-
-clean: 
-	rm -f bin/* 
+# obj/%.o: src/%.cc
+# 	$(CC) -c $(CFLAGS) $(INCLUDES) $< -o $@ $(LDFLAGS)
