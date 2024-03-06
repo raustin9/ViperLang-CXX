@@ -3,7 +3,7 @@
 #include "tokenizer/tokenizer.h"
 
 int main(int argc, char** argv) {
-    std::string input = "[]";
+    std::string input = "proc main(): i32 {}";
     viper::VFile file;
     file.name = "test.viper";
     file.content = input;
