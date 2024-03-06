@@ -1,13 +1,14 @@
 #pragma once
 
 #include "viper.h"
+#include "core/file.h"
 #include <vector>
 
 namespace viper {
 
 namespace tokenizer {
 
-std::vector<token> tokenize_file(VFile* file);
+std::vector<token> tokenize_file(core::VFile* file);
 
 } // tokenizer namespace 
 } // viper namespace

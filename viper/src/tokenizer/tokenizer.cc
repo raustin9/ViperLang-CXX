@@ -19,7 +19,7 @@ static std::unordered_map<std::string, token_kind> keywords;
 static std::unordered_map<std::string, token_kind> punctuators;
 static std::vector<token> tokens;
 static std::string* input_ptr;
-static VFile* file_ptr;
+static core::VFile* file_ptr;
 
 
 /// @brief Turn all \r or \r\n into just \n
@@ -392,7 +392,7 @@ static void tokenize() {
 }
 
 /// @brief Entrypoint for the tokenizer
-std::vector<token> tokenize_file(VFile* file) {
+std::vector<token> tokenize_file(core::VFile* file) {
     file_ptr = file;
     line_num = 0;
     position = 0;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "defines.h"
+#include "core/file.h"
 
 #include <string>
 #include <unordered_map>
@@ -106,17 +107,6 @@ enum token_kind {
     TK_EOF,
 };
 
-// Source codes files
-struct VFile {
-    std::string name;
-    i32 file_number;
-    std::string content;
-
-    // From chibic project. Maybe use?
-    std::string display_name;
-    i32 line_delta;
-};
-
 // Data type for a token
 struct token {
     token_kind kind;
@@ -124,7 +114,7 @@ struct token {
     f64 fvalue;
     std::string name;
     
-    VFile* file;
+    core::VFile* file;
     u32 line_num;
 
     static token create_new(token_kind kind, std::string name, u32 line_num) {
