@@ -109,6 +109,7 @@ enum token_kind {
 
 // Data type for a token
 struct token {
+    token() {}
     token_kind kind;
     i64 value;
     f64 fvalue;
