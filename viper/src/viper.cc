@@ -1,5 +1,6 @@
 #include "viper.h"
 #include "tokenizer/tokenizer.h"
+#include <vector>
 
 int main(int argc, char** argv) {
     core::VFile file = core::VFile::from("test.viper");

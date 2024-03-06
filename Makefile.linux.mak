@@ -1,4 +1,4 @@
-CC := clang++
+CC := g++
 CXXSPEC := c++20
 
 BUILD_DIR := bin
@@ -38,4 +38,4 @@ clean: # clean build directory
 
 $(OBJ_DIR)/%.cc.o: %.cc # compile .c to .o object
 	@echo   $<...
-	clang++ $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)
+	$(CC) $< $(COMPILER_FLAGS) -c -o $@ $(DEFINES) $(INCLUDE_FLAGS)

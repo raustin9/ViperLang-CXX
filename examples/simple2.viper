@@ -2,9 +2,9 @@
 #include <string>
 
 struct User {
-    name :: std::string;
-    age :: u32;
-    password :: std::string;
+    name: std::string;
+    age: u32;
+    password: std::string;
 }
 
 proc test_function() : i32 {

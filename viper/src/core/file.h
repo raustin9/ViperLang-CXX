@@ -8,6 +8,7 @@ namespace core {
     
 // Source codes files
 struct VFile {
+    VFile() {}
     std::string name;
     i32 file_number;
     std::string content;
