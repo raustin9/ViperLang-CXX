@@ -1,5 +1,7 @@
 -Iviper
 -Iviper/src
+-Itests
+-Itests/src
 -g
 -std=c++20
 -Wall

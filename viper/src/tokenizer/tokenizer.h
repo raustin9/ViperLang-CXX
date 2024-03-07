@@ -8,7 +8,7 @@ namespace viper {
 
 namespace tokenizer {
 
-std::vector<token> tokenize_file(core::VFile* file);
+std::vector<token> tokenize_file(viper::VFile* file);
 
 } // tokenizer namespace 
 } // viper namespace

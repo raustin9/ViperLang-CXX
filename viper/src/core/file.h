@@ -4,7 +4,7 @@
 
 #include <string>
 
-namespace core {
+namespace viper {
     
 // Source codes files
 struct VFile {

@@ -16,7 +16,7 @@ static char current_char;
 static std::unordered_map<std::string, token_kind> keywords;
 static std::vector<token> tokens;
 static std::string* input_ptr;
-static core::VFile* file_ptr;
+static viper::VFile* file_ptr;
 
 
 /// @brief Turn all \r or \r\n into just \n
@@ -70,7 +70,7 @@ static token read_number() {
     token tok;
     u64 pos = position;
     bool decimal = false;
-    bool is_legal = false;
+    bool is_legal = true;
 
     while (isdigit(current_char) != 0 || current_char == '.') {
         if (current_char == '.' && decimal == true) {
@@ -393,7 +393,7 @@ static void tokenize() {
 
 
 /// @brief Entrypoint for the tokenizer
-std::vector<token> tokenize_file(core::VFile* file) {
+std::vector<token> tokenize_file(viper::VFile* file) {
     file_ptr = file;
     line_num = 0;
     position = 0;

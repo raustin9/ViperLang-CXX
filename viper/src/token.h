@@ -115,7 +115,7 @@ struct token {
     f64 fvalue;
     std::string name;
     
-    core::VFile* file;
+    viper::VFile* file;
     u32 line_num;
 
     static token create_new(token_kind kind, std::string name, u32 line_num) {

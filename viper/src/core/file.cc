@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <fstream>
 
-namespace core {
+namespace viper {
 
 /// @brief Create a file with content read from specified file path
 /// @param file_path The path to the file we want to read source code from
