@@ -1,7 +1,5 @@
 #include "tokenizer.h"
-#include "viper.h"
 #include <cctype>
-#include <cstring>
 #include <unordered_map>
 #include <vector>
 #include <iostream>
@@ -16,7 +14,6 @@ static u64 read_position = 0;
 static char current_char;
 
 static std::unordered_map<std::string, token_kind> keywords;
-static std::unordered_map<std::string, token_kind> punctuators;
 static std::vector<token> tokens;
 static std::string* input_ptr;
 static core::VFile* file_ptr;
@@ -130,11 +127,14 @@ static std::string read_identifier() {
     return input_ptr->substr(pos, position-pos);
 }
 
+
+/// @brief Skip over multi line comments
 static void skip_single_line_comment() {
     while (current_char != '\n') {
         read_char();
     }
 }
+
 
 /// @brief Skip block comment
 static void skip_multi_line_comment() {
@@ -365,7 +365,7 @@ static token next_token() {
                 tokens.push_back(tok);
                 return tok;
             } else {
-                tok = token::create_new(token_kind::TK_ILLEGAL, std::string(1, current_char), line_num);
+                tok = token::create_new(token_kind::TK_ILLEGAL, "__%internal_illegal", line_num);
                 std::printf("Illegal token '%s' on line %ul in file %s", 
                     tok.name.c_str(),
                     line_num,
@@ -390,6 +390,7 @@ static void tokenize() {
         tok = next_token();
     }
 }
+
 
 /// @brief Entrypoint for the tokenizer
 std::vector<token> tokenize_file(core::VFile* file) {
