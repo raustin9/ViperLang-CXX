@@ -49,7 +49,7 @@ void TestManager::run_tests() {
 
         total_time += test_duration;
 
-        std::printf("Executed %lu of %lu (skipped %lu) %s (%.6lf sec / %.6lf sec total)",
+        std::printf("Executed %lu of %lu (skipped %lu) %s (%.6lf sec / %.6lf sec total)\n",
                 i+1,
                 count,
                 skipped,

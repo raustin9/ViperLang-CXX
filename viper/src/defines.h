@@ -14,6 +14,25 @@ typedef int64_t i64;
 typedef float f32;
 typedef double f64;
 
+enum data_type_primitive {
+    DT_U8,
+    DT_U16,
+    DT_U32,
+    DT_U64,
+    DT_I8,
+    DT_I16,
+    DT_I32,
+    DT_I64,
+
+    DT_F32,
+    DT_F64
+};
+
+struct data_type {
+    data_type_primitive type;
+    u32 width; // number of bytes wide this is
+};
+
 // Platform Detection
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__)
 #define Q_PLATFORM_WINDOWS 1

@@ -6,44 +6,34 @@
 
 namespace viper {
 
-namespace tokenizer {
-
-static u32 line_num = 0;
-static u32 position = 0;
-static u64 read_position = 0;
-static char current_char;
-
-static std::unordered_map<std::string, token_kind> keywords;
-static std::vector<token> tokens;
-static std::string* input_ptr;
-static viper::VFile* file_ptr;
-
-
+/// TODO: This is bugged, but it is probably good for now
 /// @brief Turn all \r or \r\n into just \n
-void canonicalize_newline(std::string &s) {
-    i32 i = 0, j = 0;
+void Tokenizer::canonicalize_newline() {
+    u64 i = 0, j = 0;
 
-    while (s[i]) {
-        if (s[i] == '\r' && s[i+1] == '\n') {
+    while (
+        m_input_ptr->at(i) && 
+        i < m_input_ptr->size()-1
+    ) {
+        if (m_input_ptr->at(i) == '\r' && m_input_ptr->at(i+1) == '\n') {
             i += 2;
-            s[j++] = '\n';
-        } else if (s[i] == '\r') {
+            m_input_ptr->at(j++) = '\n';
+        } else if (m_input_ptr->at(i) == '\r') {
             i++;
-            s[j++] = '\n';
+            m_input_ptr->at(j++) = '\n';
         } else {
-            s[j++] = s[i++];
+            m_input_ptr->at(j++) = m_input_ptr->at(i++);
         }
     }
-
-    s[j] = '\0';
+    m_input_ptr->at(j) = '\0';
 }
 
 /// @brief Eat a character and put it in current_char
-static void read_char() {
-    if(read_position >= input_ptr->length()) {
+void Tokenizer::read_char() {
+    if(read_position >= m_input_ptr->length()) {
         current_char = '\0';
     } else {
-        current_char = input_ptr->at(read_position);
+        current_char = m_input_ptr->at(read_position);
     }
 
     position = read_position;
@@ -51,7 +41,7 @@ static void read_char() {
 }
 
 /// @brief Skip over whitespace characters
-static void skip_whitespace() {
+void Tokenizer::skip_whitespace() {
     while (current_char == ' ' ||
            current_char == '\n' ||
            current_char == '\t' ||
@@ -66,7 +56,7 @@ static void skip_whitespace() {
 
 
 /// @brief Read a number literal. Either floating point or integer
-static token read_number() {
+token Tokenizer::read_number() {
     token tok;
     u64 pos = position;
     bool decimal = false;
@@ -89,24 +79,24 @@ static token read_number() {
         tok.kind = token_kind::TK_NUM_INT;
     }
 
-    tok.name = input_ptr->substr(pos, position-pos);
+    tok.name = m_input_ptr->substr(pos, position-pos);
     return tok;
 }
 
 
 /// @brief Look at the next character in input without incrimenting
-static char peek_char() {
-    if (read_position >= input_ptr->length()) {
+char Tokenizer::peek_char() {
+    if (read_position >= m_input_ptr->length()) {
         return '\0';
     }
     
-    return input_ptr->at(read_position);
+    return m_input_ptr->at(read_position);
 }
 
 
 /// @brief Lookup an identifier string in the table of keywords, and if 
 ///        it is not a keyword it is just normal identifier
-static token_kind lookup_identifier(const std::string& identifier) {
+token_kind Tokenizer::lookup_identifier(const std::string& identifier) {
     if (keywords.find(identifier) != keywords.end()) {
         return keywords[identifier];
     }
@@ -116,7 +106,7 @@ static token_kind lookup_identifier(const std::string& identifier) {
 
 
 /// @brief Read an identifier string
-static std::string read_identifier() {
+std::string Tokenizer::read_identifier() {
     u32 pos = position;
     while (isalpha(current_char) != 0 ||
            current_char == '_' ||
@@ -124,12 +114,12 @@ static std::string read_identifier() {
         read_char();
     }
 
-    return input_ptr->substr(pos, position-pos);
+    return m_input_ptr->substr(pos, position-pos);
 }
 
 
 /// @brief Skip over multi line comments
-static void skip_single_line_comment() {
+void Tokenizer::skip_single_line_comment() {
     while (current_char != '\n') {
         read_char();
     }
@@ -137,8 +127,8 @@ static void skip_single_line_comment() {
 
 
 /// @brief Skip block comment
-static void skip_multi_line_comment() {
-    if (input_ptr->find("*/") == std::string::npos) {
+void Tokenizer::skip_multi_line_comment() {
+    if (m_input_ptr->find("*/") == std::string::npos) {
         std::cout << "Unclosed block comment";
         return;
     }
@@ -151,8 +141,20 @@ static void skip_multi_line_comment() {
 }
 
 
+/// @brief Read the content of a string literal
+std::string Tokenizer::read_string_content() {
+    read_char();
+    u32 pos = position;
+    while (current_char != '"') {
+        read_char(); 
+    }
+
+    return m_input_ptr->substr(pos, position-pos);
+}
+
+
 /// @brief Get the next token and return it
-static token next_token() {
+token Tokenizer::next_token() {
     token tok;
 
     skip_whitespace();
@@ -348,6 +350,10 @@ static token next_token() {
             }
             break;
 
+        case '"':
+            tok = token::create_new(TK_STR, read_string_content(), line_num);
+            break;
+
         case '\0':
             tok = token::create_new(token_kind::TK_EOF, "__%internal_eof", line_num);
             break;
@@ -369,7 +375,7 @@ static token next_token() {
                 std::printf("Illegal token '%s' on line %ul in file %s", 
                     tok.name.c_str(),
                     line_num,
-                    file_ptr->name.c_str()
+                    m_file->name.c_str()
                 );
             }
             break;
@@ -382,7 +388,7 @@ static token next_token() {
 
 
 /// @brief Tokenize the input
-static void tokenize() {
+void Tokenizer::tokenize() {
     token tok;
     read_char();
     tok.kind = token_kind::TK_ILLEGAL;
@@ -391,15 +397,21 @@ static void tokenize() {
     }
 }
 
+Tokenizer Tokenizer::create_new(VFile* file) {
+    Tokenizer tok = Tokenizer();
+    tok.m_file = file;
+
+    return tok;
+}
 
 /// @brief Entrypoint for the tokenizer
-std::vector<token> tokenize_file(viper::VFile* file) {
-    file_ptr = file;
-    line_num = 0;
+// std::vector<token> Tokenizer::tokenize_file() {
+std::list<token> Tokenizer::tokenize_file() {
     position = 0;
     read_position = 0;
-    input_ptr = &file->content;
-    canonicalize_newline(*input_ptr);
+    line_num = 0;
+    m_input_ptr = &m_file->content;
+    // canonicalize_newline();
 
     keywords["const"] = TK_CONST;
     keywords["let"] = TK_LET;
@@ -414,6 +426,10 @@ std::vector<token> tokenize_file(viper::VFile* file) {
     keywords["if"] = TK_IF;
     keywords["elif"] = TK_ELIF;
     keywords["else"] = TK_ELSE;
+    
+    keywords["#define"] = TK_PP_DEFINE;
+    keywords["#import"] = TK_PP_IMPORT;
+    keywords["#export"] = TK_PP_EXPORT;
 
     keywords["true"] = TK_TRUE;
     keywords["false"] = TK_FALSE;
@@ -434,5 +450,4 @@ std::vector<token> tokenize_file(viper::VFile* file) {
     return tokens;
 }
 
-} // tokenizer namespace
 } // viper namespace

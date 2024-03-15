@@ -34,6 +34,13 @@ enum token_kind {
     TK_IF,
     TK_ELIF,
     TK_ELSE,
+
+    // Preprocessor keywords
+    TK_PP_DEFINE,
+    TK_PP_IMPORT,
+    TK_PP_EXPORT,
+
+    TK_STR,
    
     // Hold internal data types
     TK_NUM_FLOAT, // floating point numbers

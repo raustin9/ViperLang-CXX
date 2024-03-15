@@ -1,4 +1,5 @@
 CC := g++
+LD := ld
 CXXSPEC := c++20
 
 BUILD_DIR := bin
@@ -10,7 +11,7 @@ COMPILER_FLAGS := -g -Werror -Wall -std=$(CXXSPEC) -fPIC
 INCLUDE_FLAGS := -I$(ASSEMBLY)/src -I$(ASSEMBLY)
 TEST_INCLUDE_FLAGS := -I$(TEST_DIR)/src -I$(TEST_DIR) 
 LINKER_FLAGS := -shared
-TEST_LINKER_FLAGS := -L./bin/ -lviper
+TEST_LINKER_FLAGS := -L./bin -lviper -Wl,-rpath,./bin/
 DEFINES := -DQDEBUG -DQEXPORT
 
 SRC_FILES := $(shell find $(ASSEMBLY) -name *.cc)		# .cc files

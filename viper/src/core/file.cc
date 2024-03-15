@@ -32,4 +32,12 @@ VFile VFile::from(const std::string& file_path) {
     return file;
 }
 
+
+/// @brief Create and return a pointer to a VFile object
+VFile* VFile::create_new_ptr() {
+    VFile* file = new VFile();
+
+    return file;
+}
+
 } // core namespace

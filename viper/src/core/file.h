@@ -9,6 +9,7 @@ namespace viper {
 // Source codes files
 struct VFile {
     VFile() {}
+    ~VFile() {}
     std::string name;
     i32 file_number;
     std::string content;
@@ -18,6 +19,7 @@ struct VFile {
     i32 line_delta;
 
     static VFile from(const std::string& file_path);
+    static VFile* create_new_ptr();
 };
 
 }

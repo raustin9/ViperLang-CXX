@@ -1,6 +1,7 @@
 #!/bin/bash
 
 echo "Running tests"
+// export LD_LIBRARY_PATH=./bin
 
 make -f "Makefile.linux.mak" tests
 errorlevel=$?
