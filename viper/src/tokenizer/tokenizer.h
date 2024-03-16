@@ -1,9 +1,8 @@
 #pragma once
 
 #include "token.h"
-#include "core/file.h"
+#include "core/viper.h"
 #include <unordered_map>
-#include <vector>
 #include <list>
 
 namespace viper {
@@ -14,7 +13,6 @@ class Tokenizer {
 
         static Tokenizer create_new(VFile* file);
         std::list<token> tokenize_file();
-        // std::vector<token> tokenize_file();
 
 
     private:
@@ -46,7 +44,6 @@ class Tokenizer {
         // std::unique_ptr<VFile> m_file;
         VFile* m_file;                                          // [NOT OWNED] Pointer to the file's content we are tokenizing
         std::unordered_map<std::string, token_kind> keywords;   // Keywords with corresponding tokens
-        // std::vector<token> tokens;                              // Resulting list of tokens from the source code
         std::list<token> tokens;
         u32 line_num = 0;                                       // Line number of the file we are currently on
         u64 position = 0;                                       

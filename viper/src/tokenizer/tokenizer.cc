@@ -1,7 +1,6 @@
 #include "tokenizer.h"
 #include <cctype>
 #include <unordered_map>
-#include <vector>
 #include <iostream>
 
 namespace viper {
@@ -405,7 +404,6 @@ Tokenizer Tokenizer::create_new(VFile* file) {
 }
 
 /// @brief Entrypoint for the tokenizer
-// std::vector<token> Tokenizer::tokenize_file() {
 std::list<token> Tokenizer::tokenize_file() {
     position = 0;
     read_position = 0;
