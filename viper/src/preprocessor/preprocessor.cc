@@ -59,11 +59,34 @@ std::optional<VError> Preprocessor::_handle_import() {
                    
     if (m_current_token.kind == TK_LBRACKET) {
         // Local module import
-    } else if (m_current_token.kind == TK_LSQUIRLY) {
+        _next_token(); // eat the '[' or '<'
+        if (m_current_token.kind != TK_IDENT) {
+            return VError::create_new(ERR_LEVEL_FATAL, "Expected an identifier but got {}", m_current_token.name);
+        }
+
+        // NOTE: We will add the module here soon. The way this works is subect to change
+        m_parent_file->add_dependency_module(m_current_token.name, nullptr);
+        _next_token(); // eat the identifier
+        if (m_current_token.kind != TK_RBRACKET) {
+            return VError::create_new(ERR_LEVEL_FATAL, "Expected an ']' but got {}", m_current_token.name);
+        }
+    } else if (m_current_token.kind == TK_LT) {
         // Standard lib import
+        _next_token(); // eat the '[' or '<'
+        if (m_current_token.kind != TK_IDENT) {
+            return VError::create_new(ERR_LEVEL_FATAL, "Expected an identifier but got {}", m_current_token.name);
+        }
+
+        // NOTE: We will add the module here soon. The way this works is subect to change
+        m_parent_file->add_dependency_module(m_current_token.name, nullptr);
+        _next_token(); // eat the identifier
+        if (m_current_token.kind != TK_GT) {
+            return VError::create_new(ERR_LEVEL_FATAL, "Expected an '>' but got {}", m_current_token.name);
+        }
     } else {
-        return VError::create_new(std::format("Expected '{' or '['. Got {}", m_current_token.name), ERR_LEVEL_FATAL);
+        return VError::create_new(ERR_LEVEL_FATAL, "Expected '[' or '<'but got '{}'", m_current_token.name);
     }
+
 
 
 

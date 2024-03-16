@@ -10,6 +10,8 @@ namespace viper {
 class Tokenizer {
     public:
         ~Tokenizer() {}
+        Tokenizer(Tokenizer&&) = default;
+        Tokenizer(const Tokenizer& tok) = default;
 
         static Tokenizer create_new(VFile* file);
         std::list<token> tokenize_file();

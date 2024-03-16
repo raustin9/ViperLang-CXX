@@ -1,6 +1,6 @@
-CC := g++
+CC := g++-13
 LD := ld
-CXXSPEC := c++20
+CXXSPEC := c++23
 
 BUILD_DIR := bin
 OBJ_DIR := obj

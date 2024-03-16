@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <optional>
+#include <format>
 
 
 namespace viper {
@@ -21,7 +22,15 @@ enum error_level {
 class VError {
     public:
         ~VError() {}
-        static VError create_new(const std::string& message, error_level level);
+        template <typename...Args>
+        static VError create_new(error_level level, const std::format_string<Args...> fmt, Args&&... args) {
+            VError verr = VError();
+
+            verr.m_msg = std::vformat(fmt.get(), std::make_format_args(args...));
+            verr.m_level = level;
+
+            return verr;
+        }
         void print();
     private:
         VError() {}
