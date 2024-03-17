@@ -661,6 +661,7 @@ Tokenizer Tokenizer::create_new(VFile* file) {
     tok.keywords["true"] = TK_TRUE;
     tok.keywords["false"] = TK_FALSE;
 
+    tok.keywords["byte"] = TK_TYPESPEC_BYTE;   
     tok.keywords["i8"] = TK_TYPESPEC_I8;   
     tok.keywords["i16"] = TK_TYPESPEC_I16;  
     tok.keywords["i32"] = TK_TYPESPEC_I32;  

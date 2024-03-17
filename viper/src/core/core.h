@@ -1,6 +1,7 @@
 #pragma once
 
 #include "defines.h"
+#include "vresult.h"
 
 #include <string>
 #include <vector>
@@ -11,33 +12,6 @@
 
 namespace viper {
 struct VFile;
-
-/* Severity of compiler error */
-enum error_level {
-    ERR_LEVEL_WARNING, // Recoverable or unreccomended
-    ERR_LEVEL_FATAL,   // Completely invalid, unrecoverable
-};
-
-/* Error class for something we ran into when compiling */
-class VError {
-    public:
-        ~VError() {}
-        template <typename...Args>
-        static VError create_new(error_level level, const std::format_string<Args...> fmt, Args&&... args) {
-            VError verr = VError();
-
-            verr.m_msg = std::vformat(fmt.get(), std::make_format_args(args...));
-            verr.m_level = level;
-
-            return verr;
-        }
-        void print();
-    private:
-        VError() {}
-
-        std::string m_msg;
-        error_level m_level;
-};
 
 /* Module of source code
  *
@@ -75,7 +49,7 @@ struct VFile {
     static VFile from(const std::string& file_path);
     static VFile* create_new_ptr();
 
-    std::optional<VError> add_dependency_module(const std::string& name, VModule* mod);
+    VResult add_dependency_module(const std::string& name, VModule* mod);
 };
 
 }

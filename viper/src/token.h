@@ -50,6 +50,7 @@ enum token_kind {
     TK_FALSE,
 
     // Type specifiers
+    TK_TYPESPEC_BYTE, // 'byte' -- equivalent to u8
     TK_TYPESPEC_I8,   // i8
     TK_TYPESPEC_I16,  // i16
     TK_TYPESPEC_I32,  // i32
