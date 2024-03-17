@@ -1,4 +1,4 @@
-#include "module.h"
+#include "viper.h"
 #include <memory>
 
 namespace viper {
@@ -11,8 +11,8 @@ VModule VModule::create_new() {
     return vmod;
 }
 
-void VModule::add_file(std::unique_ptr<VFile> file) {
-    m_files.push_back(std::move(file));
+void VModule::add_file(VFile* file) {
+    m_files.push_back(file);
 }
 
 }

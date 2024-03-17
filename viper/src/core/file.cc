@@ -1,7 +1,8 @@
-#include "file.h"
+#include "viper.h"
 
 #include <cstdlib>
 #include <fstream>
+#include <optional>
 
 namespace viper {
 
@@ -30,6 +31,13 @@ VFile VFile::from(const std::string& file_path) {
     handle.read(file.content.data(), file_length);
 
     return file;
+}
+
+
+/// @brief Add a module as a dependancy for a file
+std::optional<VError> VFile::add_dependency_module(const std::string& name, VModule* mod) {
+    dependency_modules[name] = mod;
+    return std::nullopt;
 }
 
 

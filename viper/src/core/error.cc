@@ -1,6 +1,7 @@
-#include "error.h"
+#include "viper.h"
 
 #include <cstring>
+#include <format>
 
 namespace viper {
 
@@ -24,13 +25,5 @@ void VError::print() {
 /// @brief Create a new compiler error object
 /// @param message The message for the error
 /// @param level The severity of the encountered error
-VError VError::create_new(const std::string &message, error_level level) {
-    VError verr = VError();
-
-    verr.m_msg = message;
-    verr.m_level = level;
-
-    return verr;
-}
 
 }
