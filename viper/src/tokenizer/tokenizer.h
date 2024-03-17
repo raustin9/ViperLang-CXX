@@ -17,6 +17,7 @@ class Tokenizer {
         std::vector<token> tokenize_file();
 
         token next_token(); // Get the next token from the input source
+        token peek_token(); // Peek a token without advancing through the code
 
     private:
         Tokenizer() {}

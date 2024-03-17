@@ -8,7 +8,6 @@ class Parser {
     public:
         ~Parser() {}
 
-
     private:
         Parser() {}
         
