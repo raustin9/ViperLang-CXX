@@ -404,7 +404,7 @@ Tokenizer Tokenizer::create_new(VFile* file) {
 }
 
 /// @brief Entrypoint for the tokenizer
-std::list<token> Tokenizer::tokenize_file() {
+std::vector<token> Tokenizer::tokenize_file() {
     position = 0;
     read_position = 0;
     line_num = 0;

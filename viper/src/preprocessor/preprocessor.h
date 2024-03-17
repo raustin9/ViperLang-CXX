@@ -6,7 +6,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <list>
 #include <optional>
 
 namespace viper {
@@ -32,10 +31,10 @@ struct macro {
 class Preprocessor {
     public:
         ~Preprocessor() {}
-        Preprocessor create_new(const std::list<token>& input_tokens);
-        Preprocessor create_new(VFile* parent, const std::list<token>& input_tokens);
+        static Preprocessor create_new(const std::vector<token>& input_tokens);
+        static Preprocessor create_new(VFile* parent, const std::vector<token>& input_tokens);
 
-        std::list<token> process(); // Preprocess tokens and 
+        std::vector<token> process(); // Preprocess tokens and 
 
     private:
         Preprocessor() {}
@@ -45,10 +44,10 @@ class Preprocessor {
 
         VFile* m_parent_file;
         std::unordered_map<std::string, macro> m_macros;
-        std::list<token> m_tokens;
+        std::vector<token> m_tokens;
         token m_current_token;
         token m_peek_token;
-        std::list<token>::iterator m_current_position;
+        u64 m_current_position;
 };
 
 }
