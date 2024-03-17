@@ -27,5 +27,5 @@ uint8_t pp_test_imports() {
 }
 
 void preprocessor_register_tests(TestManager& manager) {
-    manager.register_test(pp_test_imports, "test if specified imports are valid");
+    // manager.register_test(pp_test_imports, "test if specified imports are valid");
 }

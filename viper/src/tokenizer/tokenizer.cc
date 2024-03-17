@@ -389,7 +389,7 @@ token Tokenizer::next_token() {
 /// @brief Tokenize the input
 void Tokenizer::tokenize() {
     token tok;
-    read_char();
+    // read_char();
     tok.kind = token_kind::TK_ILLEGAL;
     while (tok.kind != token_kind::TK_EOF) {
         tok = next_token();
@@ -399,51 +399,51 @@ void Tokenizer::tokenize() {
 Tokenizer Tokenizer::create_new(VFile* file) {
     Tokenizer tok = Tokenizer();
     tok.m_file = file;
+    tok.position = 0;
+    tok.read_position = 0;
+    tok.line_num = 0;
+    tok.m_input_ptr = &tok.m_file->content;
+    // canonicalize_newline();
+
+    tok.keywords["const"] = TK_CONST;
+    tok.keywords["let"] = TK_LET;
+    tok.keywords["proc"] = TK_PROC;
+    tok.keywords["return"] = TK_RETURN;
+    tok.keywords["struct"] = TK_STRUCT;
+    tok.keywords["enum"] = TK_ENUM;
+    tok.keywords["module"] = TK_MODULE;
+    tok.keywords["void"] = TK_VOID;
+    tok.keywords["for"] = TK_FOR;
+    tok.keywords["while"] = TK_WHILE;
+    tok.keywords["if"] = TK_IF;
+    tok.keywords["elif"] = TK_ELIF;
+    tok.keywords["else"] = TK_ELSE;
+    
+    tok.keywords["#define"] = TK_PP_DEFINE;
+    tok.keywords["#import"] = TK_PP_IMPORT;
+    tok.keywords["#export"] = TK_PP_EXPORT;
+
+    tok.keywords["true"] = TK_TRUE;
+    tok.keywords["false"] = TK_FALSE;
+
+    tok.keywords["i8"] = TK_TYPESPEC_I8;   
+    tok.keywords["i16"] = TK_TYPESPEC_I16;  
+    tok.keywords["i32"] = TK_TYPESPEC_I32;  
+    tok.keywords["i64"] = TK_TYPESPEC_I64;  
+    tok.keywords["f32"] = TK_TYPESPEC_F32;  
+    tok.keywords["f64"] = TK_TYPESPEC_F64;  
+    tok.keywords["u8"] = TK_TYPESPEC_U8;   
+    tok.keywords["u16"] = TK_TYPESPEC_U16;  
+    tok.keywords["u32"] = TK_TYPESPEC_U32;  
+    tok.keywords["u64"] = TK_TYPESPEC_U64;  
+    tok.keywords["bool"] = TK_TYPESPEC_BOOL; 
+    tok.read_char();
 
     return tok;
 }
 
 /// @brief Entrypoint for the tokenizer
 std::vector<token> Tokenizer::tokenize_file() {
-    position = 0;
-    read_position = 0;
-    line_num = 0;
-    m_input_ptr = &m_file->content;
-    // canonicalize_newline();
-
-    keywords["const"] = TK_CONST;
-    keywords["let"] = TK_LET;
-    keywords["proc"] = TK_PROC;
-    keywords["return"] = TK_RETURN;
-    keywords["struct"] = TK_STRUCT;
-    keywords["enum"] = TK_ENUM;
-    keywords["module"] = TK_MODULE;
-    keywords["void"] = TK_VOID;
-    keywords["for"] = TK_FOR;
-    keywords["while"] = TK_WHILE;
-    keywords["if"] = TK_IF;
-    keywords["elif"] = TK_ELIF;
-    keywords["else"] = TK_ELSE;
-    
-    keywords["#define"] = TK_PP_DEFINE;
-    keywords["#import"] = TK_PP_IMPORT;
-    keywords["#export"] = TK_PP_EXPORT;
-
-    keywords["true"] = TK_TRUE;
-    keywords["false"] = TK_FALSE;
-
-    keywords["i8"] = TK_TYPESPEC_I8;   
-    keywords["i16"] = TK_TYPESPEC_I16;  
-    keywords["i32"] = TK_TYPESPEC_I32;  
-    keywords["i64"] = TK_TYPESPEC_I64;  
-    keywords["f32"] = TK_TYPESPEC_F32;  
-    keywords["f64"] = TK_TYPESPEC_F64;  
-    keywords["u8"] = TK_TYPESPEC_U8;   
-    keywords["u16"] = TK_TYPESPEC_U16;  
-    keywords["u32"] = TK_TYPESPEC_U32;  
-    keywords["u64"] = TK_TYPESPEC_U64;  
-    keywords["bool"] = TK_TYPESPEC_BOOL; 
-
     tokenize();
     return tokens;
 }

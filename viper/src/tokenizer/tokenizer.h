@@ -16,6 +16,7 @@ class Tokenizer {
         static Tokenizer create_new(VFile* file);
         std::vector<token> tokenize_file();
 
+        token next_token(); // Get the next token from the input source
 
     private:
         Tokenizer() {}
@@ -39,7 +40,6 @@ class Tokenizer {
         void skip_single_line_comment();
         void skip_multi_line_comment();
         std::string read_string_content();
-        token next_token();
         void tokenize();
 
 

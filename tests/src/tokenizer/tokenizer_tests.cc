@@ -38,13 +38,14 @@ uint8_t lexer_test_main_proc() {
     file->content = input;
 
     viper::Tokenizer tokenizer = viper::Tokenizer::create_new(file);
-    std::vector<viper::token> tokens = tokenizer.tokenize_file();
+    // std::vector<viper::token> tokens = tokenizer.tokenize_file();
 
-    for (std::size_t i = 0; i < tokens.size(); i++) {
-        if (tokens[i].kind != expected[i]) {
+    for (std::size_t i = 0; i < expected.size(); i++) {
+        viper::token tok = tokenizer.next_token();
+        if (tok.kind != expected[i]) {
             std::printf("test_lexer: expected '%s' and got '%s'\n", 
                     viper::token::kind_to_str(expected[i]).c_str(),
-                    viper::token::kind_to_str(tokens[i].kind).c_str());
+                    viper::token::kind_to_str(tok.kind).c_str());
             result = false;
             return result;
         }
@@ -91,18 +92,19 @@ uint8_t lexer_test_string_literals() {
 
     viper::Tokenizer tokenizer = viper::Tokenizer::create_new(file);
     // std::vector<viper::token> tokens = tokenizer.tokenize_file();
-    std::vector<viper::token> tokens = tokenizer.tokenize_file();
+    // std::vector<viper::token> tokens = tokenizer.tokenize_file();
 
-    for (std::size_t i = 0; i < tokens.size(); i++) {
-        if (tokens[i].kind != expected[i]) {
+    for (std::size_t i = 0; i < expected.size(); i++) {
+        viper::token tok = tokenizer.next_token();
+        if (tok.kind != expected[i]) {
             std::printf("test_lexer_basic_str: expected '%s' and got '%s'\n", 
                     viper::token::kind_to_str(expected[i]).c_str(),
-                    viper::token::kind_to_str(tokens[i].kind).c_str());
+                    viper::token::kind_to_str(tok.kind).c_str());
             result = false;
             return result;
         }
 
-        if (tokens[i].kind == viper::TK_STR && tokens[i].name != "test string content") {
+        if (tok.kind == viper::TK_STR && tok.name != "test string content") {
             return false;
         }
     }
