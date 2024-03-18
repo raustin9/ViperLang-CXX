@@ -8,49 +8,45 @@
 
 namespace viper {
 
-/* Severity of compiler error */
-enum error_level {
-    ERR_LEVEL_WARNING, // Recoverable or unreccomended
-    ERR_LEVEL_FATAL,   // Completely invalid, unrecoverable
-};
+namespace vresult {
 
-namespace types {
-    template <typename T>
-        struct Ok {
-            Ok(const T& val) : val(val) {}
-            Ok(T&& val) : val(std::move(val)) {}
-
-            T val;
-        };
-
-    template<>
-    struct Ok<void> {};
-
-    template <typename E>
-    struct Err {
-        Err(const E& val) : val(val) {}
-        Err(E&& val) : val(std::move(val)) {}
-        E val;
-    };
-}
-
-template <typename T, typename CleanT = typename std::decay<T>::type>
-types::Ok<CleanT> Ok(T&& val) {
-    return types::Ok<CleanT>(std::forward<T>(val));
-}
-
-inline types::Ok<void> Ok() {
-    return types::Ok<void>();
-}
-
-template <typename E, typename CleanE = typename std::decay<E>::type>
-types::Err<CleanE> Err(E&& val) {
-    return types::Err<CleanE>(std::forward<E>(val));
-}
+// // Unit type
+// struct unit_t {}; 
+// 
+// template <typename T>
+// struct Ok {
+//     using value_type = T;
+// 
+//     Ok(const T& val) : val(val) {}
+//     Ok(T&& val) : val(std::move(val)) {}
+// 
+//     T val;
+// };
+// 
+// template <>
+// struct Ok<unit_t> {
+//     using value_type = unit_t;
+// 
+//     Ok() = default;
+//     Ok(unit_t) {}
+// 
+//     unit_t val;
+// };
+// 
+// template <typename E>
+// struct Err {
+//     Err(const E& val) : val(val) {}
+//     Err(E&& val) : val(std::move(val)) {}
+//     E val;
+// };
+// 
+// Ok()->Ok<unit_t>; // ???
 
 /* Error class for something we ran into when compiling */
 template <typename T, typename E>
 struct VResult {
+    static_assert(!std::is_same<E, void>::value, "void error type is not permitted");
+
     ~VResult() {}
     void print();
 
@@ -75,19 +71,31 @@ struct VResult {
         return ok == false;
     }
 
+    /// @brief Return the value of the result. This throws a runtime exception if the result is an Error
     T unwrap() {
         if (ok) {
             return value;
-        } 
+        }
 
         throw std::runtime_error("Result type is not OK");
     }
 
-    std::variant<T, E> value;
+    /// @brief Returns the value of the result if it is valid.
+    /// If the result is an error, then it terminates the program
+    T expect(const char* msg) const {
+        if (!ok) {
+            std::fprintf(stderr, "%s\n", msg);
+            std::terminate();
+        }
+
+        return value;
+    }
+
 
     private:
-        bool ok;
+        bool ok;                  // Flag for if this is Ok or Err. true for Ok, false for Err
+        std::variant<T, E> value; // The actual value being held by the result
 };
 
-
-}
+} // namespace vresult
+} // namespace viper

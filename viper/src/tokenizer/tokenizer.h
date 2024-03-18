@@ -1,7 +1,7 @@
 #pragma once
 
 #include "token.h"
-#include "core/viper.h"
+#include "core/core.h"
 #include <unordered_map>
 #include <vector>
 

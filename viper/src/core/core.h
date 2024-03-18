@@ -2,6 +2,7 @@
 
 #include "defines.h"
 #include "vresult.h"
+#include "verror.h"
 
 #include <string>
 #include <vector>
@@ -49,7 +50,7 @@ struct VFile {
     static VFile from(const std::string& file_path);
     static VFile* create_new_ptr();
 
-    VResult add_dependency_module(const std::string& name, VModule* mod);
+    vresult::VResult<std::string, VError> add_dependency_module(const std::string& name, VModule* mod);
 };
 
 }

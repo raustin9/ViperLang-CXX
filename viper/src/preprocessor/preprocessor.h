@@ -1,6 +1,6 @@
 #pragma once
 
-#include "core/viper.h"
+#include "core/core.h"
 #include "defines.h"
 #include "token.h"
 #include <string>
@@ -40,7 +40,7 @@ class Preprocessor {
         Preprocessor() {}
 
         void _next_token();
-        std::optional<VError> _handle_import();
+        // std::optional<VError> _handle_import();
 
         VFile* m_parent_file;
         std::unordered_map<std::string, macro> m_macros;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "defines.h"
-#include "core/viper.h"
+#include "core/core.h"
 
 #include <string>
 #include <unordered_map>

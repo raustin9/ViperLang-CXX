@@ -1,7 +1,7 @@
 #pragma once
 
 #include "defines.h"
-#include "viper.h"
+#include "core.h"
 #include <vector>
 #include <string>
 
