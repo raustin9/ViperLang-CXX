@@ -16,4 +16,17 @@ namespace viper {
     }
 
 
+/// PROCEDURE NODE ///
+ProcedureNode::ProcedureNode() {
+    
+}
+
+std::string& ProcedureNode::get_name() {
+    return name;
+}
+
+void ProcedureNode::set_name(const std::string& name) {
+    this->name = name;
+}
+
 }

@@ -5,6 +5,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 namespace viper {
 
@@ -118,6 +119,36 @@ enum token_kind {
 // Data type for a token
 struct token {
     token() {}
+
+    token(const token& other) {
+        kind = other.kind;
+        value = other.value;
+        fvalue = other.fvalue;
+        name = other.name;
+        file = other.file;
+        line_num = other.line_num;
+    }
+    token(token&& other) {
+        std::swap(other.kind, kind);
+        std::swap(other.value, value);
+        std::swap(other.fvalue, fvalue);
+        std::swap(other.name, name);
+        std::swap(other.line_num, line_num);
+        std::swap(other.file, file);
+        std::swap(other.kind, kind);
+    }
+
+    token& operator=(token other) {
+        kind = other.kind;
+        value = other.value;
+        fvalue = other.fvalue;
+        name = other.name;
+        file = other.file;
+        line_num = other.line_num;
+
+        return *this;
+    }
+
     token_kind kind;
     i64 value;
     f64 fvalue;

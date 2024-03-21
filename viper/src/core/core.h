@@ -50,7 +50,7 @@ struct VFile {
     static VFile from(const std::string& file_path);
     static VFile* create_new_ptr();
 
-    vresult::VResult<std::string, VError> add_dependency_module(const std::string& name, VModule* mod);
+    VResult<std::string, VError> add_dependency_module(const std::string& name, VModule* mod);
 };
 
 }

@@ -8,40 +8,6 @@
 
 namespace viper {
 
-namespace vresult {
-
-// // Unit type
-// struct unit_t {}; 
-// 
-// template <typename T>
-// struct Ok {
-//     using value_type = T;
-// 
-//     Ok(const T& val) : val(val) {}
-//     Ok(T&& val) : val(std::move(val)) {}
-// 
-//     T val;
-// };
-// 
-// template <>
-// struct Ok<unit_t> {
-//     using value_type = unit_t;
-// 
-//     Ok() = default;
-//     Ok(unit_t) {}
-// 
-//     unit_t val;
-// };
-// 
-// template <typename E>
-// struct Err {
-//     Err(const E& val) : val(val) {}
-//     Err(E&& val) : val(std::move(val)) {}
-//     E val;
-// };
-// 
-// Ok()->Ok<unit_t>; // ???
-
 /* Error class for something we ran into when compiling */
 template <typename T, typename E>
 struct VResult {
@@ -59,8 +25,13 @@ struct VResult {
         return res;
     }
     
-    static VResult<T,E> Err(E) {
+    static VResult<T,E> Err(E val) {
+        VResult<T, E> res;
+        res.ok = true;
 
+        res.value = val;
+
+        return res;
     }
     
     bool is_ok() {
@@ -74,7 +45,7 @@ struct VResult {
     /// @brief Return the value of the result. This throws a runtime exception if the result is an Error
     T unwrap() {
         if (ok) {
-            return value;
+            return std::get<T>(value);
         }
 
         throw std::runtime_error("Result type is not OK");
@@ -88,7 +59,25 @@ struct VResult {
             std::terminate();
         }
 
-        return value;
+        return std::get<T>(value);
+    }
+
+    /// @brief Return the value of the result or a specified value if the result is an error
+    /// Instead of terminating when it's Err, we return the val parameter
+    T&& unwrap_or(T&& val) {
+        if (!ok) {
+            return std::move(val);
+        }
+
+        return std::move(std::get<T>(value));
+    }
+
+    T& unwrap_or(T& val) {
+        if (!ok) {
+            return val;
+        }
+
+        return std::get<T>(value);
     }
 
 
@@ -97,5 +86,4 @@ struct VResult {
         std::variant<T, E> value; // The actual value being held by the result
 };
 
-} // namespace vresult
 } // namespace viper

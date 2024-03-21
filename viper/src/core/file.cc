@@ -35,9 +35,9 @@ VFile VFile::from(const std::string& file_path) {
 
 
 /// @brief Add a module as a dependancy for a file
-vresult::VResult<std::string, VError> VFile::add_dependency_module(const std::string& name, VModule* mod) {
+VResult<std::string, VError> VFile::add_dependency_module(const std::string& name, VModule* mod) {
     dependency_modules[name] = mod;
-    return vresult::VResult<std::string, VError>::Ok("");;
+    return VResult<std::string, VError>::Ok("");;
 }
 
 

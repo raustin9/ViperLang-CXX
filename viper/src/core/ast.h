@@ -7,8 +7,10 @@
  *
  */
 
+#include "core/scope.h"
 #include "defines.h"
 #include "token.h"
+#include "core/context.h"
 
 #include <memory>
 
@@ -17,7 +19,6 @@ namespace viper {
 /* The kind of node in the AST */
 enum NodeKind {
     AST_NOOP,
-
 };
 
 /* The data type of node in AST */
@@ -51,6 +52,37 @@ struct ASTNode {
     token tok;
 
     static std::shared_ptr<ASTNode> create_new(token tok, NodeKind kind);
+
+    Context& getContext() {return context;}
+    void setContext(Context context) {}
+
+private:
+
+    Context context;
+    ASTNode* parent_node;
+    std::string module;
+    Scope* scope;
+};
+
+// For procedure nodes
+struct ProcedureNode : public ASTNode {
+    ProcedureNode();
+    
+    std::string& get_name();
+    void set_name(const std::string& name);
+    void add_parameter(ASTNode* param) {
+    }
+
+    private:
+    std::string name;
+    std::string lookup_name;
+    std::string mangled_name;
+    std::vector<ASTNode*> param_var_declarations;
+    ASTNode* return_declarator;
+    ASTNode* procedure_declarator;
+
+    const Type* data_type;
+
 };
 
 /* The structure for the 
