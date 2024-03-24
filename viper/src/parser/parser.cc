@@ -20,7 +20,7 @@ Parser Parser::create_new(Tokenizer* lexer) {
 /// Return the AST node created from it
 ///
 /// proc ident(ident: type [, ident: type]*) {...}
-VResult<ASTNode*, VError> Parser::parse_procedure() {
+result::Result<ASTNode*, ParserError> Parser::parse_procedure() {
     ProcedureNode *proc_node = new ProcedureNode();
     
     // Eat the 'proc' token 
@@ -57,7 +57,7 @@ VResult<ASTNode*, VError> Parser::parse_procedure() {
     (void) eat(TK_LSQUIRLY);
     (void) eat(TK_RSQUIRLY);
     
-    return VResult<ASTNode*,VError>::Ok(proc_node);
+    return result::Ok(proc_node);
 }
 
 

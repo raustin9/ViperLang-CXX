@@ -18,6 +18,7 @@ namespace result {
 template <typename T, typename E>
 class Result;
 
+// For the Ok type of a result
 template <typename T>
 struct Ok {
     explicit constexpr Ok(const T& value) : m_value(value) {}
@@ -40,6 +41,7 @@ private:
     T m_value;
 };
 
+// For the Err type of a result
 template <typename E>
 struct Err {
     explicit constexpr Err(const E& value) : m_value(value) {}
@@ -62,6 +64,10 @@ public:
     Result(Ok<T> value) : m_data(value.value()), m_ok(true) {}
     Result(Err<E> value) : m_data(value.value()), m_ok(false) {}
 
+    // For types that are coercible like pointers to inherited classes
+    template<typename U>
+    Result(Ok<U> value) : m_data(static_cast<U>(value.value())), m_ok(true) {}
+
     ~Result() {
 
     }
@@ -79,6 +85,8 @@ public:
         return *this;
     }
 
+    // [[ Conversion operators ]] //
+
     /// @brief If Result is Ok(), return the value. 
     /// Otherwise, panic
     constexpr T&& unwrap() {
@@ -89,6 +97,56 @@ public:
         terminate("Panic: unwrap failed on Result");
         std::exit(1);
     }
+
+    constexpr E&& unwrap_err() {
+        if(!m_ok) {
+            this->termiante("Called `unwrap_err` on Err value");
+        }
+        return std::get<E>(std::move(m_data));
+    }
+
+    constexpr T&& unwrap_or(T&& val) {
+        if (m_ok) {
+            return std::get<T>(std::move(m_data));
+        }
+        return val;
+    }
+
+    constexpr T&& unwrap_or_default() {
+        static_assert(
+            std::is_default_constructible<T>::value,
+            "`unwrap_or_default` requires <T> to be default construbtible"
+        );
+
+        if(m_ok) {
+            return std::get<T>(std::move(m_data));
+        }
+        return T();
+    }
+
+    constexpr E&& unwrap_err_or(E && error) {
+        static_assert(
+            std::is_default_constructible<E>::value,
+            "`unwrap_or_default` requires <E> to be default construbtible"
+        );
+
+        if (!m_ok) {
+            return E();
+        }
+        return std::get<E>(std::move(m_data));
+    }
+
+    constexpr E&& expect_err(const std::string_view& msg) {
+        if(m_ok) {
+            this->terminate(msg);
+        }
+
+        return std::get<E>(std::move(m_data));
+    }
+
+
+
+
 
 
     bool is_ok() const { return this->m_ok == true; }

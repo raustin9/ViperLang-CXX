@@ -11,12 +11,20 @@
 #include "token.h"
 #include "core/ast.h"
 #include "core/vresult.h"
+#include "core/result.h"
 #include "core/verror.h"
 
 #include <memory>
 #include <vector>
 
 namespace viper {
+
+class ParserError : public VError {
+    public:
+        
+
+    private:
+};
 
 class Parser {
     public:
@@ -27,12 +35,12 @@ class Parser {
     private:
         Parser() {}
 
-        VResult<token, VError> eat(token_kind type);
+        VResult<token, ParserError> eat(token_kind type);
         token eat();
 
-        VResult<ASTNode*, VError> parse_procedure();
-        VResult<ASTNode*, VError> parse_proc_parameter();
-        VResult<ASTNode*, VError> parse_data_type();
+        result::Result<ASTNode*, ParserError> parse_procedure();
+        result::Result<ASTNode*, ParserError> parse_proc_parameter();
+        result::Result<ASTNode*, ParserError> parse_data_type();
 
         token m_current_token;
         Tokenizer* m_lexer; // [NOT OWNED] 
