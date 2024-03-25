@@ -70,20 +70,20 @@ struct ProcedureNode : public ASTNode {
     
     std::string& get_name();
     void set_name(const std::string& name);
-    void add_parameter(ASTNode* param) {
-        parameters.push_back(param);
-    }
+
+    void set_return_type(ASTNode* node);
+    const ASTNode* get_return_type() const;
+
+    void add_parameter(ASTNode* param);
 
     private:
-    std::string name;
-    std::string lookup_name;
-    std::string mangled_name;
-    std::vector<ASTNode*> parameters;
-    ASTNode* return_declarator;
-    ASTNode* procedure_declarator;
-
-    const Type* data_type;
-
+    std::string name;                 // unmangled name of the procedure
+    std::string lookup_name;        
+    std::string mangled_name;         // the mangled name of the procedure
+    std::vector<ASTNode*> parameters; // the parameter definitions for the function
+    ASTNode* return_declarator;       
+    ASTNode* procedure_declarator;    // 
+    std::vector<ASTNode*> code_body;  // code block body of the procedure
 };
 
 struct ProcParameter : public ASTNode {
@@ -105,6 +105,8 @@ struct ProcParameter : public ASTNode {
     std::string name;
     token data_type;
 };
+
+
 
 /* The structure for the 
  * abstract syntax tree */

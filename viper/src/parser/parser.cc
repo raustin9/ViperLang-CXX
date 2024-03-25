@@ -78,8 +78,8 @@ ResultNode Parser::parse_procedure() {
     (void) eat(TK_COLON).unwrap_or(token::create_new(TK_COLON, "__%internal_colon_err", m_current_token.line_num));
 
     // Get the return type specification
-    // auto return_type = parse_data_type();
-    (void)parse_data_type();
+    auto return_type = parse_data_type().unwrap();
+    proc_node->set_return_type(return_type);
 
     // Parse the code body
     // TODO: NOT IMPLEMENTED
@@ -92,11 +92,13 @@ ResultNode Parser::parse_procedure() {
 
 /// @brief Parse a data type: i32, u8, bool, etc.
 ResultNode Parser::parse_data_type() {
-    eat();
-    return {};
+    ASTNode* node = new ASTNode();
+    auto dt_token = eat(TK_IDENT).unwrap_or(
+        token::create_new(TK_IDENT, "__%internal_data_type", m_current_token.line_num)
+    );
+
+    return result::Ok(node);
 }
-
-
 
 
 /// @brief Parse a parameter for a procedure
