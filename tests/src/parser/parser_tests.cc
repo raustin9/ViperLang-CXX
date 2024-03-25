@@ -10,7 +10,7 @@ uint8_t parser_test_basic() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "proc main(): i32 {}\n";
+    file->content = "proc main(param1: i32, param2: f32): i32 {}\n";
 
     viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
     viper::Parser parser = viper::Parser::create_new(&lexer);

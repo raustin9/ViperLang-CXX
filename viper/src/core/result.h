@@ -100,7 +100,7 @@ public:
 
     constexpr E&& unwrap_err() {
         if(!m_ok) {
-            this->termiante("Called `unwrap_err` on Err value");
+            this->terminate("Called `unwrap_err` on Err value");
         }
         return std::get<E>(std::move(m_data));
     }

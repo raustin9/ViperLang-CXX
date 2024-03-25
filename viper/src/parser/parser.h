@@ -19,13 +19,6 @@
 
 namespace viper {
 
-class ParserError : public VError {
-    public:
-        
-
-    private:
-};
-
 class Parser {
     public:
         ~Parser() {}
@@ -33,18 +26,27 @@ class Parser {
         std::shared_ptr<AST> parse();
 
     private:
+        using ResultNode = result::Result<ASTNode*, VError>;
         Parser() {}
 
-        VResult<token, ParserError> eat(token_kind type);
+        result::Result<token, VError> eat(token_kind type);
         token eat();
+        
+        ResultNode parse_struct();
+        ResultNode parse_struct_body();
+        ResultNode parse_struct_member();
 
-        result::Result<ASTNode*, ParserError> parse_procedure();
-        result::Result<ASTNode*, ParserError> parse_proc_parameter();
-        result::Result<ASTNode*, ParserError> parse_data_type();
+        ResultNode parse_let_declaration();
+
+        ResultNode parse_procedure();
+        ResultNode parse_proc_parameter();
+
+        ResultNode parse_data_type();
 
         token m_current_token;
         Tokenizer* m_lexer; // [NOT OWNED] 
         std::shared_ptr<AST> m_ast;
+        std::vector<VError> error_msgs;
 };
 
 }

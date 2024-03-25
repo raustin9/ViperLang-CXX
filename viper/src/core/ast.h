@@ -71,18 +71,39 @@ struct ProcedureNode : public ASTNode {
     std::string& get_name();
     void set_name(const std::string& name);
     void add_parameter(ASTNode* param) {
+        parameters.push_back(param);
     }
 
     private:
     std::string name;
     std::string lookup_name;
     std::string mangled_name;
-    std::vector<ASTNode*> param_var_declarations;
+    std::vector<ASTNode*> parameters;
     ASTNode* return_declarator;
     ASTNode* procedure_declarator;
 
     const Type* data_type;
 
+};
+
+struct ProcParameter : public ASTNode {
+    void set_name(const std::string& str) {
+        name = str;
+    }
+    std::string get_name() const { 
+        return name;
+    }
+
+    void set_data_type(const token& tok) {
+        data_type = tok;
+    }
+    token get_data_type() const {
+        return data_type;
+    }
+
+    private:
+    std::string name;
+    token data_type;
 };
 
 /* The structure for the 

@@ -1,6 +1,9 @@
 #pragma once
 
+#include <cstdio>
+#include <format>
 #include <string>
+#include <string_view>
 
 namespace viper {
 
@@ -15,10 +18,15 @@ class VError {
         ~VError() {}
 
         /// @brief Create a new VError and return it
-        static VError create_new(error_type type, const std::string& msg) {
+        template <typename ... Args>
+        static VError create_new(error_type type, const std::string_view& fmt, Args... args) {
             VError err = VError();
-            err.msg = msg;
 
+            // char buffer[400];
+            err.msg = std::vformat(fmt, std::make_format_args(args...));
+            // std::snprintf(buffer, sizeof(buffer), fmt, args...);
+            
+            // err.msg = buffer;
             return err;
         }
 

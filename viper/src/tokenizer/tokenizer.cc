@@ -661,18 +661,18 @@ Tokenizer Tokenizer::create_new(VFile* file) {
     tok.keywords["true"] = TK_TRUE;
     tok.keywords["false"] = TK_FALSE;
 
-    tok.keywords["byte"] = TK_TYPESPEC_BYTE;   
-    tok.keywords["i8"] = TK_TYPESPEC_I8;   
-    tok.keywords["i16"] = TK_TYPESPEC_I16;  
-    tok.keywords["i32"] = TK_TYPESPEC_I32;  
-    tok.keywords["i64"] = TK_TYPESPEC_I64;  
-    tok.keywords["f32"] = TK_TYPESPEC_F32;  
-    tok.keywords["f64"] = TK_TYPESPEC_F64;  
-    tok.keywords["u8"] = TK_TYPESPEC_U8;   
-    tok.keywords["u16"] = TK_TYPESPEC_U16;  
-    tok.keywords["u32"] = TK_TYPESPEC_U32;  
-    tok.keywords["u64"] = TK_TYPESPEC_U64;  
-    tok.keywords["bool"] = TK_TYPESPEC_BOOL; 
+//    tok.keywords["byte"] = TK_TYPESPEC_BYTE;   
+//    tok.keywords["i8"] = TK_TYPESPEC_I8;   
+//    tok.keywords["i16"] = TK_TYPESPEC_I16;  
+//    tok.keywords["i32"] = TK_TYPESPEC_I32;  
+//    tok.keywords["i64"] = TK_TYPESPEC_I64;  
+//    tok.keywords["f32"] = TK_TYPESPEC_F32;  
+//    tok.keywords["f64"] = TK_TYPESPEC_F64;  
+//    tok.keywords["u8"] = TK_TYPESPEC_U8;   
+//    tok.keywords["u16"] = TK_TYPESPEC_U16;  
+//    tok.keywords["u32"] = TK_TYPESPEC_U32;  
+//    tok.keywords["u64"] = TK_TYPESPEC_U64;  
+//    tok.keywords["bool"] = TK_TYPESPEC_BOOL; 
     tok.read_char();
 
     return tok;

@@ -5,6 +5,8 @@
 
 namespace viper {
 
+using ResultNode = result::Result<ASTNode*, VError>;
+
 /// @brief Create a new parser from a specified Tokenizer
 Parser Parser::create_new(Tokenizer* lexer) {
     Parser p = Parser();
@@ -20,14 +22,28 @@ Parser Parser::create_new(Tokenizer* lexer) {
 /// Return the AST node created from it
 ///
 /// proc ident(ident: type [, ident: type]*) {...}
-result::Result<ASTNode*, ParserError> Parser::parse_procedure() {
+ResultNode Parser::parse_procedure() {
     ProcedureNode *proc_node = new ProcedureNode();
     
     // Eat the 'proc' token 
-    auto proc_token = eat(TK_PROC).unwrap_or(token::create_new(TK_PROC, "__%internal_proc_err", m_current_token.line_num));
+    auto proc_token = eat(TK_PROC);
+    if (proc_token.is_err()) {
+        auto proc_err = proc_token.unwrap_err();
+        error_msgs.push_back(proc_err);
+    }
+    token proc_tok = proc_token.unwrap_or(
+        token::create_new(TK_PROC, "__%internal_proc_err", m_current_token.line_num)
+    );
    
     // Eat the identifier
-    auto identifier_token = eat(TK_IDENT).unwrap_or(token::create_new(TK_IDENT, "__%internal_ident_err", m_current_token.line_num));
+    auto identifier_res = eat(TK_IDENT);
+    if (identifier_res.is_err()) {
+        auto identifier_err = identifier_res.unwrap_err();
+        error_msgs.push_back(identifier_err);
+    }
+    token identifier_token = identifier_res.unwrap_or(
+        token::create_new(TK_IDENT, "__%internal_ident_err", m_current_token.line_num)
+    );
     proc_node->set_name(identifier_token.name);
 
     // Eat the '('
@@ -40,6 +56,19 @@ result::Result<ASTNode*, ParserError> Parser::parse_procedure() {
             .unwrap_or(nullptr);
 
         proc_node->add_parameter(param);
+        if (m_current_token.kind != TK_COMMA) {
+            if (m_current_token.kind == TK_RPAREN) {
+                break;
+            }
+            VError::create_new(
+                error_type::PARSER_ERR, 
+                "Parser::parse_proc_parameter: expected ',' but got '{}'", 
+                token::kind_to_str(m_current_token.kind)
+            );
+        }
+        
+        // Eat the ','
+        (void) eat(TK_COMMA).unwrap();
     }
    
     // Eat the ')'
@@ -62,7 +91,7 @@ result::Result<ASTNode*, ParserError> Parser::parse_procedure() {
 
 
 /// @brief Parse a data type: i32, u8, bool, etc.
-VResult<ASTNode*, VError> Parser::parse_data_type() {
+ResultNode Parser::parse_data_type() {
     eat();
     return {};
 }
@@ -73,8 +102,33 @@ VResult<ASTNode*, VError> Parser::parse_data_type() {
 /// @brief Parse a parameter for a procedure
 /// Return the ASTNode for it if successful, VError otherwise
 /// proc ident(ident: type, ident: type) {...}
-VResult<ASTNode*, VError> Parser::parse_proc_parameter() {
-    return {};
+ResultNode Parser::parse_proc_parameter() {
+    ProcParameter* node = new ProcParameter();
+    // Eat the first identifier
+    auto ident_res = eat(TK_IDENT);
+    if (ident_res.is_err()) {
+        error_msgs.push_back(ident_res.unwrap_err());
+    }
+    token identifier_token = ident_res.unwrap_or(
+        token::create_new(TK_IDENT, "__%internal_ident_err", m_current_token.line_num)
+    );
+    node->set_name(identifier_token.name);
+
+    // Eat the ":"
+    (void) eat(TK_COLON).unwrap();
+
+    // Eat the type specifier
+    auto type_res = eat(TK_IDENT);
+    if (type_res.is_err()) {
+        error_msgs.push_back(type_res.unwrap_err());
+    }
+    token type_token = type_res.unwrap_or(
+        token::create_new(TK_IDENT, "__%internal_type_err", m_current_token.line_num)
+    );
+    node->set_data_type(type_token);
+    
+
+    return result::Ok(node);
 }
 
 
@@ -127,7 +181,7 @@ token Parser::eat() {
 }
 
 /// @brief Eat the expected token
-VResult<token, VError> Parser::eat(token_kind type) {
+result::Result<token, VError> Parser::eat(token_kind type) {
     std::printf("Parser::eat got %s\n",
         token::kind_to_str(m_current_token.kind).c_str()
     );
@@ -136,16 +190,17 @@ VResult<token, VError> Parser::eat(token_kind type) {
             token::kind_to_str(type).c_str(),
             token::kind_to_str(m_current_token.kind).c_str()
         );
-       
-        // @bad -- Change this function to use a VResult or VError type
-        // to handle potential errors
-        exit(1);
+        
+        return result::Err(VError::create_new(
+            error_type::PARSER_ERR,
+            "Parser::eat: Expected {} but got {}\n",
+            token::kind_to_str(type).c_str(),
+            token::kind_to_str(m_current_token.kind).c_str()
+        ));
     }
-
-    
     
     m_current_token = m_lexer->next_token();
-    return VResult<token, VError>::Ok(m_current_token);
+    return result::Ok(m_current_token);
 }
 
 }
