@@ -1,0 +1,26 @@
+program -> top_level_stmt*
+
+top_level_stmt -> var_decl
+                | proc_decl
+                | struct_decl
+                | enum_decl
+
+var_decl -> "let" identifier ":" type_specifier dimension? "=" expression
+
+expression -> literal
+            | unary_expr
+            | binary_expr
+            | grouping
+
+literal -> NUMBER
+         | STRING
+         | "true"
+         | "false"
+
+grouping -> "(" expression ")"
+
+unary -> ( "~" | "!" ) expression
+
+binary -> expression operator expression
+
+operator -> ...operators

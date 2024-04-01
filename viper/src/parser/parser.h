@@ -33,6 +33,12 @@ class Parser {
         token eat();
 
         ResultNode parse_expr();
+        ResultNode parse_expr_primary();
+        ResultNode parse_expr_grouping();
+        ResultNode parse_expr_identifier();
+        ResultNode parse_expr_boolean();
+        ResultNode parse_expr_integer();
+        ResultNode parse_expr_float();
 
         ResultNode parse_statement();
         ResultNode parse_let_statement();

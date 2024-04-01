@@ -32,13 +32,79 @@ ResultNode Parser::parse_statement() {
     }
 }
 
-/// @brief Parse an expression sequence
-/// x + 4
-/// function_call()
-ResultNode Parser::parse_expr() {
-    while (m_current_token.kind != TK_SEMICOLON) {
-        (void) eat();
+
+ResultNode Parser::parse_expr_primary() {
+    switch(m_current_token.kind) {
+        case token_kind::TK_TRUE: {
+            return parse_expr_boolean();
+        } break;
+        case token_kind::TK_FALSE: {
+            return parse_expr_boolean();
+        } break;
+        case token_kind::TK_NUM_FLOAT: {
+            return parse_expr_float();
+        } break;
+        case token_kind::TK_NUM_INT: {
+            return parse_expr_integer();
+        } break;
+        case token_kind::TK_LPAREN: {
+            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing grouping expression not implemented yet :(", token::kind_to_str(m_current_token.kind)));
+        } break;
+        case token_kind::TK_IDENT: {
+            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing identifiers not implemented yet :(", token::kind_to_str(m_current_token.kind)));
+        } break;
+        case token_kind::TK_STR: {
+            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing string literals not implemented yet :(", token::kind_to_str(m_current_token.kind)));
+        } break;
+        default:
+            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: Invalid token '{}' when parsing primary expression", token::kind_to_str(m_current_token.kind)));
     }
+}
+
+
+/// @brief Parse a true or false boolean expression
+ResultNode Parser::parse_expr_boolean() {
+    token bool_tok;
+    switch(m_current_token.kind) {
+        case TK_TRUE:
+            bool_tok = eat(TK_TRUE).unwrap();
+            return result::Ok(new BooleanLiteralNode(true));
+            break;
+        case TK_FALSE:
+            bool_tok = eat(TK_FALSE).unwrap();
+            return result::Ok(new BooleanLiteralNode(false));
+            break;
+        default:
+            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_boolean: expected true or false. Got {}", m_current_token.name));
+    }
+}
+
+/// @brief Parse an integer literal expression
+ResultNode Parser::parse_expr_integer() {
+    auto integer_res = eat(TK_NUM_INT);
+    token int_tok = integer_res.unwrap(); // we should only get here if a parent function read an integer literal,
+                          // so we should keep this exiting the program if this unwrap() fails
+
+    return result::Ok(new IntegerLiteralNode(int_tok.value));
+}
+
+
+/// @brief Parse a float literal expression
+ResultNode Parser::parse_expr_float() {
+    auto float_res = eat(TK_NUM_FLOAT);
+    token float_tok = float_res.unwrap();
+
+    return result::Ok(new FloatLiteralNode(float_tok.fvalue));
+}
+
+
+/// @brief Parse an expression sequence
+/// literal -> 4 | "hello, world" | ...keywords
+/// unary -> ~var | !var
+/// grouping -> "(" expression ")"
+ResultNode Parser::parse_expr() {
+    return parse_expr_primary(); // TODO: expand this to parsing actual expressions
+
     return result::Ok(new ASTNode());
 }
 
@@ -252,7 +318,6 @@ ResultNode Parser::parse_proc_parameter() {
         token::create_new(TK_IDENT, "__%internal_type_err", m_current_token.line_num)
     );
     node->set_data_type(type_token);
-    
 
     return result::Ok(node);
 }
@@ -268,11 +333,11 @@ std::shared_ptr<AST> Parser::parse() {
             case TK_PROC: {
                 auto node = parse_procedure().unwrap();
                 m_ast->add_node(node);
-                // std::printf("GOT PROC TOKEN\n");
             } break;
-//         case TK_PROC: {
-// 
-//         } break;
+            case TK_LET: {
+                auto node = parse_let_statement().unwrap();
+                m_ast->add_node(node);
+            } break;
 //         case TK_PROC: {
 // 
 //         } break;

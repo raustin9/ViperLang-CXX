@@ -133,22 +133,31 @@ struct VariableDeclaration : public ASTNode {
     ASTNode* value;
 };
 
+/* Represents an expression. Evaluates to a value */
+struct Expression : public ASTNode {
 
-/* Represents a block of code */
-//struct ScopeNode : public ASTNode {
-//    void add_statement(ASTNode* node);
-//    const std::vector<ASTNode*>& get_statements();
-//
-//    void set_parent(ASTNode* node);
-//    const ASTNode* get_parent();
-//
-//    std::optional<Symbol*> get_symbol(const std::string& name);
-//    bool add_symbol(Symbol* sym);
-//
-//    private:
-//    std::vector<ASTNode*> statements;
-//    Scope* parent;
-//};
+};
+
+/* Represents an integer literal */
+struct IntegerLiteralNode : public Expression {
+    IntegerLiteralNode(u64 value) : value(value) {}
+
+    u64 value;
+};
+
+/* Represents a boolean "true" or "false" literal expression */
+struct BooleanLiteralNode : public Expression {
+    BooleanLiteralNode(bool is_true) : is_true(is_true) {}
+
+    bool is_true; // whether or not this evalueates to true or false
+};
+
+/* Represents a floating point number literal */
+struct FloatLiteralNode : public Expression {
+    FloatLiteralNode(f64 value) : value(value) {}
+
+    f64 value;
+};
 
 /* The structure for the 
  * abstract syntax tree */
