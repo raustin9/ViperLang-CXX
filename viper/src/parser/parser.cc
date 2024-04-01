@@ -1,5 +1,6 @@
 #include "parser.h"
 #include "core/ast.h"
+#include "core/verror.h"
 #include "token.h"
 #include "tokenizer/tokenizer.h"
 
@@ -16,6 +17,118 @@ Parser Parser::create_new(Tokenizer* lexer) {
     p.eat();
 
     return p;
+}
+
+
+/// @brief Parse a code statement
+ResultNode Parser::parse_statement() {
+    switch(m_current_token.kind) {
+        case TK_LET: {
+            std::printf("Parsing let statement\n");
+            return parse_let_statement();
+        } break;
+        default:
+            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_statement: Unexpected token {}", token::kind_to_str(m_current_token.kind)));
+    }
+}
+
+/// @brief Parse an expression sequence
+/// x + 4
+/// function_call()
+ResultNode Parser::parse_expr() {
+    while (m_current_token.kind != TK_SEMICOLON) {
+        (void) eat();
+    }
+    return result::Ok(new ASTNode());
+}
+
+
+// @brief Parse a variable definition. 
+// let x: i32 = 4 * 2;
+// let y: i32 = x;
+ResultNode Parser::parse_let_statement() {
+    // Eat the 'let'
+    (void) eat(TK_LET);
+    
+    // Get the variable name
+    auto variable_ident_res = eat(TK_IDENT);
+    if (variable_ident_res.is_err()) {
+        error_msgs.push_back(variable_ident_res.unwrap_err());
+    }
+    auto variable_ident_tok = variable_ident_res.unwrap_or(token::create_new(TK_IDENT, "__%internal_ident_err", m_current_token.line_num));
+
+    // Eat the ':'
+    auto colon_res = eat(TK_COLON);
+    if (colon_res.is_err()) {
+        auto err = VError::create_new(
+            error_type::PARSER_ERR, 
+            "Parser::parse_let_statement: expected ':' but got {}.", 
+            token::kind_to_str(m_current_token.kind)
+        );
+        error_msgs.push_back(err);
+    }
+
+    // Eat type specifier
+    auto typespec_res = parse_data_type();
+    if (typespec_res.is_err()) {
+        auto err = VError::create_new(
+            error_type::PARSER_ERR, 
+            "Parser::parse_let_statement: expected return type but got {}.", 
+            token::kind_to_str(m_current_token.kind)
+        );
+        error_msgs.push_back(err);
+    }
+    auto typespec_node = typespec_res.unwrap();
+
+    // Eat the '='
+    auto assign_res = eat(token_kind::TK_ASSIGN);
+    if (assign_res.is_err()) {
+        auto err = VError::create_new(
+            error_type::PARSER_ERR, 
+            "Parser::parse_let_statement: expected '=' but got {}.", 
+            token::kind_to_str(m_current_token.kind)
+        );
+        error_msgs.push_back(err);
+    }
+
+    // Parse the expression it is being assigned to
+    auto expr_res = parse_expr();
+    if (expr_res.is_err()) {
+        auto err = VError::create_new(
+            error_type::PARSER_ERR, 
+            "Parser::parse_let_statement: Error parsing expression being assigned"
+        );
+        error_msgs.push_back(err);
+    }
+    auto expr_node = expr_res.unwrap_or(
+        new ASTNode(
+            NodeKind::AST_INVALID_NODE
+        )
+    );
+
+    (void) eat(TK_SEMICOLON);
+
+    return result::Ok(new VariableDeclaration(
+        variable_ident_tok.name,
+        typespec_node,
+        expr_node
+    ));
+}
+
+
+/// @brief Parse a block of code
+ResultNode Parser::parse_code_block() {    
+    // Eat the "{"
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+
+    }
+
+
+    // Eat the "}"
+    (void) eat(TK_RSQUIRLY);
+    return result::Err(VError::create_new(error_type::PARSER_ERR, "parse_code_block not implemented yet!"));
 }
 
 /// @brief Parse a procedure (function)
@@ -82,8 +195,19 @@ ResultNode Parser::parse_procedure() {
     proc_node->set_return_type(return_type);
 
     // Parse the code body
-    // TODO: NOT IMPLEMENTED
     (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        std::printf("Parsing procedure stmt\n");
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        proc_node->add_statement(stmt);
+    }
+    // Eat the "}"
     (void) eat(TK_RSQUIRLY);
     
     return result::Ok(proc_node);
@@ -142,8 +266,9 @@ std::shared_ptr<AST> Parser::parse() {
     while (m_current_token.kind != TK_EOF) {
         switch (m_current_token.kind) {
             case TK_PROC: {
-                auto node = parse_procedure();
-                std::printf("GOT PROC TOKEN\n");
+                auto node = parse_procedure().unwrap();
+                m_ast->add_node(node);
+                // std::printf("GOT PROC TOKEN\n");
             } break;
 //         case TK_PROC: {
 // 
@@ -169,11 +294,11 @@ std::shared_ptr<AST> Parser::parse() {
             default:
                 break;
         }
-        std::printf("TOKEN: %s\n", token::kind_to_str(m_current_token.kind).c_str());
+        // std::printf("TOKEN: %s\n", token::kind_to_str(m_current_token.kind).c_str());
     }
 
 
-    return {};
+    return m_ast;
 }
 
 /// @brief Eat the expected token
@@ -184,15 +309,15 @@ token Parser::eat() {
 
 /// @brief Eat the expected token
 result::Result<token, VError> Parser::eat(token_kind type) {
-    std::printf("Parser::eat got %s\n",
-        token::kind_to_str(m_current_token.kind).c_str()
-    );
+//    std::printf("Parser::eat got %s\n",
+//        token::kind_to_str(m_current_token.kind).c_str()
+//    );
     if (m_current_token.kind != type) {
-        std::printf("Parser::eat: Expected %s but got %s\n",
-            token::kind_to_str(type).c_str(),
-            token::kind_to_str(m_current_token.kind).c_str()
-        );
-        
+//        std::printf("Parser::eat: Expected %s but got %s\n",
+//            token::kind_to_str(type).c_str(),
+//            token::kind_to_str(m_current_token.kind).c_str()
+//        );
+//        
         return result::Err(VError::create_new(
             error_type::PARSER_ERR,
             "Parser::eat: Expected {} but got {}\n",

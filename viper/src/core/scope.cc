@@ -4,12 +4,13 @@ namespace viper {
 
 /// Constructor
 Scope::Scope(
-    const std::string& description,
     Scope* parent,
-    bool is_module_scope,
+    bool _is_module_scope,
     std::string module
 ) {
-
+    this->parent = parent;
+    is_module_scope = _is_module_scope;
+    module_name = module;
 }
 
 /// Desctructor

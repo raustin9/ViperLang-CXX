@@ -3,7 +3,6 @@
 #include "defines.h"
 #include "core/context.h"
 #include "core/verror.h"
-#include "core/vresult.h"
 
 #include <string>
 #include <vector>
@@ -15,23 +14,24 @@ struct Symbol;
 struct ASTNode;
 
 class Scope {
+public:
     Scope(
-        const std::string& description,
         Scope* parent,
         bool is_module_scope = false,
         std::string module = ""
     );
     ~Scope();
 
-    std::string description;
+    void add_symbol(Symbol* symbol, Context* context);
+    std::optional<Symbol*> get_symbol(ASTNode* node);
+private:
     Scope* parent;
-    std::vector<Scope*> scopes;
     bool is_module_scope;
     std::string module_name;
+    std::string description;
+    std::vector<Scope*> scopes;
     std::unordered_map<std::string, Symbol*> symbols;
 
-    void add_symbol(Symbol* symbol, Context* context);
-    VResult<Symbol*, VError> get_symbol(ASTNode* node);
 };
 
 }

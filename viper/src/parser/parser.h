@@ -31,11 +31,19 @@ class Parser {
 
         result::Result<token, VError> eat(token_kind type);
         token eat();
+
+        ResultNode parse_expr();
+
+        ResultNode parse_statement();
+        ResultNode parse_let_statement();
         
         ResultNode parse_struct();
         ResultNode parse_struct_body();
         ResultNode parse_struct_member();
 
+
+        ResultNode parse_code_block();
+        
         ResultNode parse_let_declaration();
 
         ResultNode parse_procedure();
