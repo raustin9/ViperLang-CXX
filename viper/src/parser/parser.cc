@@ -7,6 +7,55 @@
 namespace viper {
 
 using ResultNode = result::Result<ASTNode*, VError>;
+using ResultToken = result::Result<token, VError>;
+
+Parser::Parser() {
+    operator_precedences[TK_ASSIGN] = precedence::ASSIGN;
+    operator_precedences[TK_TIMESEQ] = precedence::ASSIGN;
+    operator_precedences[TK_DIVEQ] = precedence::ASSIGN;
+    operator_precedences[TK_MODEQ] = precedence::ASSIGN;
+    operator_precedences[TK_EQUALTO] = precedence::COMPARISON;
+    operator_precedences[TK_PLUSEQ] = precedence::COMPARISON;
+    operator_precedences[TK_MINUSEQ] = precedence::COMPARISON;
+    operator_precedences[TK_LT] = precedence::COMPARISON;
+    operator_precedences[TK_GT] = precedence::COMPARISON;
+    operator_precedences[TK_LTEQ] = precedence::COMPARISON;
+    operator_precedences[TK_GTEQ] = precedence::COMPARISON;
+    operator_precedences[TK_PLUS] = precedence::ADDSUB;
+    operator_precedences[TK_MINUS] = precedence::ADDSUB;
+    operator_precedences[TK_ASTERISK] = precedence::MULDIVMOD;
+    operator_precedences[TK_MOD] = precedence::MULDIVMOD;
+    operator_precedences[TK_SLASH] = precedence::MULDIVMOD;
+    operator_precedences[TK_BANG] = precedence::PREFIX;
+    operator_precedences[TK_TILDE] = precedence::PREFIX;
+    
+//    operator_precedences[TK_ASSIGN] = 1;
+//    operator_precedences[TK_EQUALTO] = 2;
+//    operator_precedences[TK_PLUSEQ] = 2;
+//    operator_precedences[TK_MINUSEQ] = 2;
+//    operator_precedences[TK_TIMESEQ] = 2;
+//    operator_precedences[TK_DIVEQ] = 2;
+//    operator_precedences[TK_MODEQ] = 2;
+//    operator_precedences[TK_LT] = 3;
+//    operator_precedences[TK_GT] = 3;
+//    operator_precedences[TK_LTEQ] = 3;
+//    operator_precedences[TK_GTEQ] = 3;
+//    operator_precedences[TK_PLUS] = 4;
+//    operator_precedences[TK_MINUS] = 4;
+//    operator_precedences[TK_ASTERISK] = 5;
+//    operator_precedences[TK_MOD] = 5;
+//    operator_precedences[TK_SLASH] = 5;
+//    operator_precedences[TK_BANG] = 6;
+//    operator_precedences[TK_TILDE] = 6;
+}
+
+precedence Parser::get_operator_precedence(const token& tok) const {
+    if (operator_precedences.find(tok.kind) != operator_precedences.end()) {
+        return operator_precedences.find(tok.kind)->second;
+    }
+
+    return precedence::INVALID_OP;
+}
 
 /// @brief Create a new parser from a specified Tokenizer
 Parser Parser::create_new(Tokenizer* lexer) {
@@ -24,7 +73,7 @@ Parser Parser::create_new(Tokenizer* lexer) {
 ResultNode Parser::parse_statement() {
     switch(m_current_token.kind) {
         case TK_LET: {
-            std::printf("Parsing let statement\n");
+            // std::printf("Parsing let statement\n");
             return parse_let_statement();
         } break;
         default:
@@ -35,27 +84,14 @@ ResultNode Parser::parse_statement() {
 
 ResultNode Parser::parse_expr_primary() {
     switch(m_current_token.kind) {
-        case token_kind::TK_TRUE: {
-            return parse_expr_boolean();
-        } break;
-        case token_kind::TK_FALSE: {
-            return parse_expr_boolean();
-        } break;
-        case token_kind::TK_NUM_FLOAT: {
-            return parse_expr_float();
-        } break;
-        case token_kind::TK_NUM_INT: {
-            return parse_expr_integer();
-        } break;
-        case token_kind::TK_LPAREN: {
-            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing grouping expression not implemented yet :(", token::kind_to_str(m_current_token.kind)));
-        } break;
-        case token_kind::TK_IDENT: {
-            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing identifiers not implemented yet :(", token::kind_to_str(m_current_token.kind)));
-        } break;
-        case token_kind::TK_STR: {
-            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing string literals not implemented yet :(", token::kind_to_str(m_current_token.kind)));
-        } break;
+        case token_kind::TK_TRUE: return parse_expr_boolean();
+        case token_kind::TK_FALSE: return parse_expr_boolean();
+        case token_kind::TK_NUM_FLOAT: return parse_expr_float();
+        case token_kind::TK_NUM_INT: return parse_expr_integer();
+        
+        case token_kind::TK_LPAREN: return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing grouping expression not implemented yet :(", token::kind_to_str(m_current_token.kind)));
+        case token_kind::TK_IDENT: return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing identifiers not implemented yet :(", token::kind_to_str(m_current_token.kind)));
+        case token_kind::TK_STR: return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing string literals not implemented yet :(", token::kind_to_str(m_current_token.kind)));
         default:
             return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: Invalid token '{}' when parsing primary expression", token::kind_to_str(m_current_token.kind)));
     }
@@ -83,7 +119,6 @@ ResultNode Parser::parse_expr_boolean() {
 ResultNode Parser::parse_expr_integer() {
     auto integer_res = eat(TK_NUM_INT);
     token int_tok = integer_res.unwrap(); // we should only get here if a parent function read an integer literal,
-                          // so we should keep this exiting the program if this unwrap() fails
 
     return result::Ok(new IntegerLiteralNode(int_tok.value));
 }
@@ -97,15 +132,47 @@ ResultNode Parser::parse_expr_float() {
     return result::Ok(new FloatLiteralNode(float_tok.fvalue));
 }
 
-
 /// @brief Parse an expression sequence
 /// literal -> 4 | "hello, world" | ...keywords
 /// unary -> ~var | !var
 /// grouping -> "(" expression ")"
-ResultNode Parser::parse_expr() {
-    return parse_expr_primary(); // TODO: expand this to parsing actual expressions
+ResultNode Parser::parse_expr(u32 precedence) {
+    ResultNode r_LHS = parse_expr_primary();
 
-    return result::Ok(new ASTNode());
+    r_LHS = parse_expr_r(r_LHS.unwrap(), precedence);
+
+    return result::Ok(r_LHS.unwrap());
+}
+
+
+ResultNode Parser::parse_expr_r(ASTNode* expr, u32 precedence) {
+    token op = m_current_token;
+   
+    // Get operator precedence. 
+    // If negative, the token 
+    // is not valid operator so return expression
+    prec_e prec = get_operator_precedence(op);
+    if (prec == precedence::INVALID_OP) {
+        // std::string str = std::format("Got non-op: {}", token::kind_to_str(op.kind));
+        // std::cout << str << "\n";
+        return result::Ok(expr);
+    }
+
+    // Eat the operator
+    (void) eat();
+
+    ResultNode r_RHS = parse_expr_primary();
+
+    prec_e next_prec = get_operator_precedence(m_current_token);
+    if (next_prec == precedence::INVALID_OP) {
+        // TODO: returna binary expression with the LHS and RHS
+        return result::Ok(expr);
+    }
+
+    if (prec < next_prec) {
+    }
+
+    return result::Ok(expr);
 }
 
 
@@ -158,7 +225,7 @@ ResultNode Parser::parse_let_statement() {
     }
 
     // Parse the expression it is being assigned to
-    auto expr_res = parse_expr();
+    auto expr_res = parse_expr(0);
     if (expr_res.is_err()) {
         auto err = VError::create_new(
             error_type::PARSER_ERR, 
@@ -263,7 +330,7 @@ ResultNode Parser::parse_procedure() {
     // Parse the code body
     (void) eat(TK_LSQUIRLY);
     while (m_current_token.kind != TK_RSQUIRLY) {
-        std::printf("Parsing procedure stmt\n");
+        // std::printf("Parsing procedure stmt\n");
         auto stmt_res = parse_statement();
         if (stmt_res.is_err()) {
             error_msgs.push_back(stmt_res.unwrap_err());
@@ -338,24 +405,6 @@ std::shared_ptr<AST> Parser::parse() {
                 auto node = parse_let_statement().unwrap();
                 m_ast->add_node(node);
             } break;
-//         case TK_PROC: {
-// 
-//         } break;
-//         case TK_PROC: {
-// 
-//         } break;
-//         case TK_PROC: {
-// 
-//         } break;
-//         case TK_PROC: {
-// 
-//         } break;
-//         case TK_PROC: {
-// 
-//         } break;
-//         case TK_PROC: {
-// 
-//         } break;
             default:
                 break;
         }
@@ -366,6 +415,21 @@ std::shared_ptr<AST> Parser::parse() {
     return m_ast;
 }
 
+
+/// @brief Look at the next token in the stream without advancing the current token
+token Parser::peek_token() {
+    token_queue.push_back(m_current_token);
+   
+    return m_current_token;
+}
+
+
+/// @brief Return the current token
+token Parser::current_token() {
+    return m_current_token;
+    // return token_queue[0];
+}
+
 /// @brief Eat the expected token
 token Parser::eat() {
     m_current_token = m_lexer->next_token();
@@ -374,15 +438,7 @@ token Parser::eat() {
 
 /// @brief Eat the expected token
 result::Result<token, VError> Parser::eat(token_kind type) {
-//    std::printf("Parser::eat got %s\n",
-//        token::kind_to_str(m_current_token.kind).c_str()
-//    );
     if (m_current_token.kind != type) {
-//        std::printf("Parser::eat: Expected %s but got %s\n",
-//            token::kind_to_str(type).c_str(),
-//            token::kind_to_str(m_current_token.kind).c_str()
-//        );
-//        
         return result::Err(VError::create_new(
             error_type::PARSER_ERR,
             "Parser::eat: Expected {} but got {}\n",

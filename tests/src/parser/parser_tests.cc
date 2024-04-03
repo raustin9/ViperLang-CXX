@@ -10,7 +10,10 @@ uint8_t parser_test_basic() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "proc main(param1: i32, param2: f32): i32 {let i: i32 = 0;}\n";
+    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+                    "   let i: i32 = 5.0;\n"
+                    "}\n"
+                    ;
 
     viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
     viper::Parser parser = viper::Parser::create_new(&lexer);
@@ -38,5 +41,5 @@ uint8_t parser_test_let() {
 /// @brief Register 
 void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_basic, "Test simple parser behavior");
-    manager.register_test(parser_test_let, "Test top level var declaration");
+    manager.register_test(parser_test_let, "Test top level var declarations");
 }

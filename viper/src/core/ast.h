@@ -17,6 +17,19 @@
 
 namespace viper {
 
+// Operator precedences
+using prec_e = enum class precedence {
+    LOWEST = 0,
+    ASSIGN,
+    COMPARISON,
+    ADDSUB,
+    MULDIVMOD,
+    BITSHIFT,
+    PREFIX,
+    CALL,
+    INVALID_OP
+};
+
 /* The kind of node in the AST */
 enum NodeKind {
     AST_NOOP,
@@ -133,27 +146,44 @@ struct VariableDeclaration : public ASTNode {
     ASTNode* value;
 };
 
-/* Represents an expression. Evaluates to a value */
-struct Expression : public ASTNode {
 
+/* Represents an expression. Evaluates to a value */
+struct ExpressionNode : public ASTNode {
+};
+
+/* Represents an expression statement. 
+ * x = 10 + b;
+ * x + 2;
+ */
+struct ExpressionStatementNode : public ASTNode{
+    ExpressionNode* expr;
+};
+
+/* Represents an expression with a prefix operator
+ * !x
+ * ~x
+ */
+struct PrefixExpressionNode : public ExpressionNode {
+    token op;
+    ExpressionNode* rhs;
 };
 
 /* Represents an integer literal */
-struct IntegerLiteralNode : public Expression {
+struct IntegerLiteralNode : public ExpressionNode {
     IntegerLiteralNode(u64 value) : value(value) {}
 
     u64 value;
 };
 
 /* Represents a boolean "true" or "false" literal expression */
-struct BooleanLiteralNode : public Expression {
+struct BooleanLiteralNode : public ExpressionNode {
     BooleanLiteralNode(bool is_true) : is_true(is_true) {}
 
     bool is_true; // whether or not this evalueates to true or false
 };
 
 /* Represents a floating point number literal */
-struct FloatLiteralNode : public Expression {
+struct FloatLiteralNode : public ExpressionNode {
     FloatLiteralNode(f64 value) : value(value) {}
 
     f64 value;
