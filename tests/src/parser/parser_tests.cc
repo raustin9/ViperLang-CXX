@@ -19,6 +19,7 @@ uint8_t parser_test_basic() {
     viper::Parser parser = viper::Parser::create_new(&lexer);
 
     auto ast = parser.parse();
+    ast->print_tree();
 
     return result;
 }
@@ -28,12 +29,30 @@ uint8_t parser_test_let() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "let x: i32 = 0; let y: f32 = 9;";
+    file->content = "let x: i32 = 2; let y: f32 = 9.0;";
 
     viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
     viper::Parser parser = viper::Parser::create_new(&lexer);
 
     auto ast = parser.parse();
+    ast->print_tree();
+
+    return result;
+}
+
+uint8_t parser_test_expressions() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "let i: i32 = 1 + 2;\n";
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+
+    ast->print_tree();
 
     return result;
 }
@@ -42,4 +61,5 @@ uint8_t parser_test_let() {
 void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_basic, "Test simple parser behavior");
     manager.register_test(parser_test_let, "Test top level var declarations");
+    manager.register_test(parser_test_expressions, "Test expression parsing");
 }

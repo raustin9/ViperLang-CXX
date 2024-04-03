@@ -73,6 +73,7 @@ struct ASTNode {
 
     Context& getContext() {return context;}
     void setContext(Context context) {}
+    virtual void print() {}
 
 private:
 
@@ -97,6 +98,24 @@ struct ProcedureNode : public ASTNode {
 
     void add_statement(ASTNode* stmt);
 
+    void print() override {
+        // Print function prototype
+        std::printf("proc <%s>: <%s> (", name.c_str(), return_declarator->tok.name.c_str());
+        for (const auto& param : this->parameters) {
+            param->print();
+            std::printf(", ");
+        }
+        std::printf(") {\n");
+
+        /// Print the code body
+        for (const auto& stmt : code_body) {
+            std::printf("    ");
+            stmt->print();
+            std::printf("\n");
+        }
+
+        std::printf("}\n");
+    }
 
     private:
     std::string name;                 // unmangled name of the procedure
@@ -124,6 +143,10 @@ struct ProcParameter : public ASTNode {
         return data_type;
     }
 
+    void print() override {
+        std::printf("<%s>: <%s>", this->name.c_str(), data_type.name.c_str());
+    }
+
     private:
     std::string name;
     token data_type;
@@ -144,6 +167,11 @@ struct VariableDeclaration : public ASTNode {
     std::string name_mangled;
     ASTNode* type_spec;
     ASTNode* value;
+
+    void print() override {
+        std::printf("let <%s>: <%s> = ", name.c_str(), type_spec->tok.name.c_str());
+        this->value->print();
+    }
 };
 
 
@@ -157,20 +185,51 @@ struct ExpressionNode : public ASTNode {
  */
 struct ExpressionStatementNode : public ASTNode{
     ExpressionNode* expr;
+
+    void print() override {
+        expr->print();
+    }
 };
 
 /* Represents an expression with a prefix operator
  * !x
  * ~x
  */
-struct PrefixExpressionNode : public ExpressionNode {
+struct ExpressionPrefixNode : public ExpressionNode {
     token op;
     ExpressionNode* rhs;
+
+    void print() override {
+        std::printf("%s", token::kind_to_str(op.kind).c_str());
+        rhs->print();
+    }
+};
+
+/* Represents an expression with an infix operator
+ * x + y
+ * y % 6
+ */
+struct ExpressionBinaryNode : public ExpressionNode {
+    ExpressionNode* lhs;
+    token op;
+    ExpressionNode* rhs;
+
+    void print() override {
+        std::printf("[");
+        rhs->print();
+        std::printf(" ");
+        lhs->print();
+        std::printf("]");
+    }
 };
 
 /* Represents an integer literal */
 struct IntegerLiteralNode : public ExpressionNode {
     IntegerLiteralNode(u64 value) : value(value) {}
+
+    void print() override {
+        std::printf("%lu", this->value);
+    }
 
     u64 value;
 };
@@ -179,12 +238,24 @@ struct IntegerLiteralNode : public ExpressionNode {
 struct BooleanLiteralNode : public ExpressionNode {
     BooleanLiteralNode(bool is_true) : is_true(is_true) {}
 
+    void print() override {
+        if (is_true) {
+            std::printf("true");
+        } else {
+            std::printf("false");
+        }
+    }
+
     bool is_true; // whether or not this evalueates to true or false
 };
 
 /* Represents a floating point number literal */
 struct FloatLiteralNode : public ExpressionNode {
     FloatLiteralNode(f64 value) : value(value) {}
+
+    void print() override {
+        std::printf("%lf", value);
+    }
 
     f64 value;
 };
@@ -198,6 +269,13 @@ struct AST {
     const std::vector<ASTNode*>& get_nodes() const;
     
     void add_node(ASTNode* node);
+
+    void print_tree() {
+        for (const auto& node : nodes) {
+            node->print();
+            std::printf("\n");
+        }
+    }
 
     private:
         AST() {}

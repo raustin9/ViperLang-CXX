@@ -150,7 +150,7 @@ struct token {
     }
 
     token_kind kind;
-    i64 value;
+    u64 value;
     f64 fvalue;
     std::string name;
     

@@ -28,25 +28,6 @@ Parser::Parser() {
     operator_precedences[TK_SLASH] = precedence::MULDIVMOD;
     operator_precedences[TK_BANG] = precedence::PREFIX;
     operator_precedences[TK_TILDE] = precedence::PREFIX;
-    
-//    operator_precedences[TK_ASSIGN] = 1;
-//    operator_precedences[TK_EQUALTO] = 2;
-//    operator_precedences[TK_PLUSEQ] = 2;
-//    operator_precedences[TK_MINUSEQ] = 2;
-//    operator_precedences[TK_TIMESEQ] = 2;
-//    operator_precedences[TK_DIVEQ] = 2;
-//    operator_precedences[TK_MODEQ] = 2;
-//    operator_precedences[TK_LT] = 3;
-//    operator_precedences[TK_GT] = 3;
-//    operator_precedences[TK_LTEQ] = 3;
-//    operator_precedences[TK_GTEQ] = 3;
-//    operator_precedences[TK_PLUS] = 4;
-//    operator_precedences[TK_MINUS] = 4;
-//    operator_precedences[TK_ASTERISK] = 5;
-//    operator_precedences[TK_MOD] = 5;
-//    operator_precedences[TK_SLASH] = 5;
-//    operator_precedences[TK_BANG] = 6;
-//    operator_precedences[TK_TILDE] = 6;
 }
 
 precedence Parser::get_operator_precedence(const token& tok) const {
@@ -117,27 +98,42 @@ ResultNode Parser::parse_expr_boolean() {
 
 /// @brief Parse an integer literal expression
 ResultNode Parser::parse_expr_integer() {
+    token int_tok = m_current_token;
     auto integer_res = eat(TK_NUM_INT);
-    token int_tok = integer_res.unwrap(); // we should only get here if a parent function read an integer literal,
+    integer_res.unwrap(); // we should only get here if a parent function read an integer literal,
 
-    return result::Ok(new IntegerLiteralNode(int_tok.value));
+
+    u64 value = std::atoi(int_tok.name.c_str());
+    return result::Ok(new IntegerLiteralNode(value));
 }
 
 
 /// @brief Parse a float literal expression
 ResultNode Parser::parse_expr_float() {
+    token fp_tok = m_current_token;
     auto float_res = eat(TK_NUM_FLOAT);
     token float_tok = float_res.unwrap();
 
-    return result::Ok(new FloatLiteralNode(float_tok.fvalue));
+    f64 value = std::atof(fp_tok.name.c_str());
+
+    return result::Ok(new FloatLiteralNode(value));
 }
 
 /// @brief Parse an expression sequence
 /// literal -> 4 | "hello, world" | ...keywords
 /// unary -> ~var | !var
 /// grouping -> "(" expression ")"
-ResultNode Parser::parse_expr(u32 precedence) {
-    ResultNode r_LHS = parse_expr_primary();
+ResultNode Parser::parse_expr(prec_e precedence) {
+    token prefix = m_current_token;
+    ResultNode r_LHS;
+    
+    if (get_operator_precedence(prefix) != precedence::INVALID_OP) {
+        std::printf("Prefix operator\n");
+        r_LHS = parse_expr_prefix();
+    } else {
+        r_LHS = parse_expr_primary();
+    }
+    
 
     r_LHS = parse_expr_r(r_LHS.unwrap(), precedence);
 
@@ -145,7 +141,50 @@ ResultNode Parser::parse_expr(u32 precedence) {
 }
 
 
-ResultNode Parser::parse_expr_r(ASTNode* expr, u32 precedence) {
+/// @brief Parse an expression with an infix operator
+/// x + y
+/// w == true
+ResultNode Parser::parse_expr_infix(ExpressionNode* lhs) {
+    ExpressionBinaryNode* expr = new ExpressionBinaryNode();
+
+    expr->lhs = lhs;
+
+    // Get and eat the operator
+    token op = m_current_token;
+    prec_e prec = get_operator_precedence(op);
+    (void) eat();
+    
+    ResultNode r_RHS = parse_expr(prec);
+    if (r_RHS.is_err()) {
+        return result::Err(VError::create_new(error_type::PARSER_ERR, "Error parsing LHS expression parsing infix epxr"));
+    }
+    expr->rhs = static_cast<ExpressionNode*>(r_RHS.unwrap());
+
+    return result::Ok(expr);
+}
+
+
+/// @brief Parse an expression with a prefix operator
+/// !x
+/// ~x
+ResultNode Parser::parse_expr_prefix() {
+    ExpressionPrefixNode* expr = new ExpressionPrefixNode();
+    token prefix = m_current_token;
+    if (get_operator_precedence(prefix) != precedence::PREFIX) {
+        return result::Err(VError::create_new(error_type::PARSER_ERR, "Invalid prefix operator {}. Did you mean ! or ~?", token::kind_to_str(prefix.kind)));
+    }
+    // token prefix = eat(); // eat the operator token
+   
+    expr->op = prefix;
+    
+    ResultNode r_RHS = parse_expr(precedence::PREFIX);
+    expr->rhs = static_cast<ExpressionNode*>(r_RHS.unwrap());
+
+    return result::Ok(expr);
+}
+
+
+ResultNode Parser::parse_expr_r(ASTNode* expr, prec_e precedence) {
     token op = m_current_token;
    
     // Get operator precedence. 
@@ -169,9 +208,6 @@ ResultNode Parser::parse_expr_r(ASTNode* expr, u32 precedence) {
         return result::Ok(expr);
     }
 
-    if (prec < next_prec) {
-    }
-
     return result::Ok(expr);
 }
 
@@ -184,6 +220,7 @@ ResultNode Parser::parse_let_statement() {
     (void) eat(TK_LET);
     
     // Get the variable name
+    token id_tok = m_current_token;
     auto variable_ident_res = eat(TK_IDENT);
     if (variable_ident_res.is_err()) {
         error_msgs.push_back(variable_ident_res.unwrap_err());
@@ -225,7 +262,7 @@ ResultNode Parser::parse_let_statement() {
     }
 
     // Parse the expression it is being assigned to
-    auto expr_res = parse_expr(0);
+    auto expr_res = parse_expr(precedence::LOWEST);
     if (expr_res.is_err()) {
         auto err = VError::create_new(
             error_type::PARSER_ERR, 
@@ -242,7 +279,7 @@ ResultNode Parser::parse_let_statement() {
     (void) eat(TK_SEMICOLON);
 
     return result::Ok(new VariableDeclaration(
-        variable_ident_tok.name,
+        id_tok.name,
         typespec_node,
         expr_node
     ));
@@ -272,25 +309,24 @@ ResultNode Parser::parse_procedure() {
     ProcedureNode *proc_node = new ProcedureNode();
     
     // Eat the 'proc' token 
-    auto proc_token = eat(TK_PROC);
-    if (proc_token.is_err()) {
-        auto proc_err = proc_token.unwrap_err();
+    token proc_token = m_current_token;
+    auto r_proc =  eat(TK_PROC);
+    if (r_proc.is_err()) {
+        auto proc_err = r_proc.unwrap_err();
         error_msgs.push_back(proc_err);
     }
-    token proc_tok = proc_token.unwrap_or(
+    token proc_tok = r_proc.unwrap_or(
         token::create_new(TK_PROC, "__%internal_proc_err", m_current_token.line_num)
     );
    
     // Eat the identifier
+    token ident_tok = m_current_token;
     auto identifier_res = eat(TK_IDENT);
     if (identifier_res.is_err()) {
         auto identifier_err = identifier_res.unwrap_err();
         error_msgs.push_back(identifier_err);
     }
-    token identifier_token = identifier_res.unwrap_or(
-        token::create_new(TK_IDENT, "__%internal_ident_err", m_current_token.line_num)
-    );
-    proc_node->set_name(identifier_token.name);
+    proc_node->set_name(ident_tok.name);
 
     // Eat the '('
     (void) eat(TK_LPAREN).unwrap_or(token::create_new(TK_LPAREN, "__%internal_lparen_err", m_current_token.line_num));
@@ -350,9 +386,11 @@ ResultNode Parser::parse_procedure() {
 /// @brief Parse a data type: i32, u8, bool, etc.
 ResultNode Parser::parse_data_type() {
     ASTNode* node = new ASTNode();
-    auto dt_token = eat(TK_IDENT).unwrap_or(
+    token dt_tok = m_current_token;
+    auto r_dt_tok = eat(TK_IDENT).unwrap_or(
         token::create_new(TK_IDENT, "__%internal_data_type", m_current_token.line_num)
     );
+    node->tok = dt_tok;
 
     return result::Ok(node);
 }
@@ -363,6 +401,8 @@ ResultNode Parser::parse_data_type() {
 /// proc ident(ident: type, ident: type) {...}
 ResultNode Parser::parse_proc_parameter() {
     ProcParameter* node = new ProcParameter();
+    token id_tok = m_current_token;
+    
     // Eat the first identifier
     auto ident_res = eat(TK_IDENT);
     if (ident_res.is_err()) {
@@ -371,20 +411,18 @@ ResultNode Parser::parse_proc_parameter() {
     token identifier_token = ident_res.unwrap_or(
         token::create_new(TK_IDENT, "__%internal_ident_err", m_current_token.line_num)
     );
-    node->set_name(identifier_token.name);
+    node->set_name(id_tok.name);
 
     // Eat the ":"
     (void) eat(TK_COLON).unwrap();
 
     // Eat the type specifier
+    token type_tok = m_current_token;
     auto type_res = eat(TK_IDENT);
     if (type_res.is_err()) {
         error_msgs.push_back(type_res.unwrap_err());
     }
-    token type_token = type_res.unwrap_or(
-        token::create_new(TK_IDENT, "__%internal_type_err", m_current_token.line_num)
-    );
-    node->set_data_type(type_token);
+    node->set_data_type(type_tok);
 
     return result::Ok(node);
 }
