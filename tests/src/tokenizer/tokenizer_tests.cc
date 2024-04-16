@@ -5,8 +5,8 @@
 // Test the tokenizer
 uint8_t lexer_test_proc_with_comments() {
     std::string input = "proc main(): i32 {"
-        " // this is a test comment\n\n"
         "   let x: u32 = 1;"
+        " // this is a test comment\n\n"
         "   return 0;"
         "}";
     

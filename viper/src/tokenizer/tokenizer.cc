@@ -382,7 +382,6 @@ token Tokenizer::peek_token() {
     }
 
     read_char();
-    tokens.push_back(tok);
     return tok;
 }
 

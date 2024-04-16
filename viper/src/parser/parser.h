@@ -32,6 +32,7 @@ class Parser {
         Parser();
 
         prec_e get_operator_precedence(const token& tok) const;
+        prec_e is_prefix_op(const token& tok) const;
 
         result::Result<token, VError> eat(token_kind type);
         token eat();
@@ -67,6 +68,7 @@ class Parser {
         ResultNode parse_data_type();
 
         token m_current_token;
+        token m_peek_token;
         std::unordered_map<token_kind, prec_e> operator_precedences;
         Tokenizer* m_lexer; // [NOT OWNED] 
         std::shared_ptr<AST> m_ast;

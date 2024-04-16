@@ -10,7 +10,7 @@ using ResultNode = result::Result<ASTNode*, VError>;
 using ResultToken = result::Result<token, VError>;
 
 Parser::Parser() {
-    operator_precedences[TK_ASSIGN] = precedence::ASSIGN;
+    // operator_precedences[TK_ASSIGN] = precedence::ASSIGN;
     operator_precedences[TK_TIMESEQ] = precedence::ASSIGN;
     operator_precedences[TK_DIVEQ] = precedence::ASSIGN;
     operator_precedences[TK_MODEQ] = precedence::ASSIGN;
@@ -30,6 +30,7 @@ Parser::Parser() {
     operator_precedences[TK_TILDE] = precedence::PREFIX;
 }
 
+/// @brief Get the precedence of the operator being 
 precedence Parser::get_operator_precedence(const token& tok) const {
     if (operator_precedences.find(tok.kind) != operator_precedences.end()) {
         return operator_precedences.find(tok.kind)->second;
@@ -38,13 +39,28 @@ precedence Parser::get_operator_precedence(const token& tok) const {
     return precedence::INVALID_OP;
 }
 
+/// @brief Determine if token is a valid prefix operator
+/// @returns Precedence if it is, INVALID_OP if not
+prec_e Parser::is_prefix_op(const token& tok) const {
+    switch (tok.kind) {
+        case TK_TILDE:
+        case TK_MINUS:
+        case TK_BANG:
+            return precedence::PREFIX;
+        default:
+            return precedence::INVALID_OP;
+    }
+}
+
 /// @brief Create a new parser from a specified Tokenizer
 Parser Parser::create_new(Tokenizer* lexer) {
     Parser p = Parser();
     p.m_lexer = lexer;
     p.m_ast = AST::create_new();
 
+    p.m_peek_token = p.m_lexer->next_token();
     p.eat();
+    // std::printf("1st token: %s\n", token::kind_to_str(p.m_current_token.kind).c_str());
 
     return p;
 }
@@ -127,7 +143,7 @@ ResultNode Parser::parse_expr(prec_e precedence) {
     token prefix = m_current_token;
     ResultNode r_LHS;
     
-    if (get_operator_precedence(prefix) != precedence::INVALID_OP) {
+    if (is_prefix_op(prefix) != precedence::INVALID_OP) {
         std::printf("Prefix operator\n");
         r_LHS = parse_expr_prefix();
     } else {
@@ -202,9 +218,11 @@ ResultNode Parser::parse_expr_r(ASTNode* expr, prec_e precedence) {
 
     ResultNode r_RHS = parse_expr_primary();
 
+    token next_op = m_current_token;
     prec_e next_prec = get_operator_precedence(m_current_token);
     if (next_prec == precedence::INVALID_OP) {
-        // TODO: returna binary expression with the LHS and RHS
+        // TODO: return a binary expression with the LHS and RHS
+        // return parse_expr_infix(static_cast<ExpressionNode*>(expr));
         return result::Ok(expr);
     }
 
@@ -431,7 +449,6 @@ ResultNode Parser::parse_proc_parameter() {
 /// @brief Parse the tokens and generate the AST
 /// @returns the Abstract Syntax tree
 std::shared_ptr<AST> Parser::parse() {
-
     /* Parse at the top level  of file */
     while (m_current_token.kind != TK_EOF) {
         switch (m_current_token.kind) {
@@ -456,9 +473,7 @@ std::shared_ptr<AST> Parser::parse() {
 
 /// @brief Look at the next token in the stream without advancing the current token
 token Parser::peek_token() {
-    token_queue.push_back(m_current_token);
-   
-    return m_current_token;
+    return m_lexer->peek_token();
 }
 
 
@@ -470,7 +485,15 @@ token Parser::current_token() {
 
 /// @brief Eat the expected token
 token Parser::eat() {
-    m_current_token = m_lexer->next_token();
+//    std::printf(
+//        "current: %s. peek: %s\n",
+//        token::kind_to_str(m_current_token.kind).c_str(),
+//        token::kind_to_str(m_peek_token.kind).c_str()
+//    );
+
+    // m_current_token = m_lexer->next_token();
+    m_current_token = m_peek_token;
+    m_peek_token = m_lexer->next_token();
     return m_current_token;
 }
 
@@ -484,8 +507,15 @@ result::Result<token, VError> Parser::eat(token_kind type) {
             token::kind_to_str(m_current_token.kind).c_str()
         ));
     }
-    
-    m_current_token = m_lexer->next_token();
+   
+//    std::printf(
+//        "current: %s. peek: %s\n",
+//        token::kind_to_str(m_current_token.kind).c_str(),
+//        token::kind_to_str(m_peek_token.kind).c_str()
+//    );
+    // m_current_token = m_lexer->next_token();
+    m_current_token = m_peek_token;
+    m_peek_token = m_lexer->next_token();
     return result::Ok(m_current_token);
 }
 
