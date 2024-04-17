@@ -1,4 +1,4 @@
-#include "viper.h"
+#include "core.h"
 
 #include <cstdlib>
 #include <fstream>
@@ -35,9 +35,9 @@ VFile VFile::from(const std::string& file_path) {
 
 
 /// @brief Add a module as a dependancy for a file
-std::optional<VError> VFile::add_dependency_module(const std::string& name, VModule* mod) {
+VResult<std::string, VError> VFile::add_dependency_module(const std::string& name, VModule* mod) {
     dependency_modules[name] = mod;
-    return std::nullopt;
+    return VResult<std::string, VError>::Ok("");;
 }
 
 

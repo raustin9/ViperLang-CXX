@@ -1,7 +1,7 @@
 #pragma once
 
 #include "token.h"
-#include "core/viper.h"
+#include "core/core.h"
 #include <unordered_map>
 #include <vector>
 
@@ -17,6 +17,7 @@ class Tokenizer {
         std::vector<token> tokenize_file();
 
         token next_token(); // Get the next token from the input source
+        token peek_token(); // Peek a token without advancing through the code
 
     private:
         Tokenizer() {}

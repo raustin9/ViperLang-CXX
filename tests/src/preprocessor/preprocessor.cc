@@ -1,4 +1,3 @@
-#include "core/viper.h"
 #include "preprocessor_test.h"
 #include "tokenizer/tokenizer.h"
 

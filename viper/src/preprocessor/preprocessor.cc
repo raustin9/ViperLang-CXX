@@ -1,9 +1,9 @@
 #include "preprocessor.h"
-#include "core/viper.h"
+#include "core/core.h"
 #include "defines.h"
 #include "token.h"
 
-#include <format>
+#include <vector>
 
 namespace viper {
 
@@ -51,42 +51,42 @@ void Preprocessor::_next_token() {
 }
 
 
-/// @brief Handle importing a module
-std::optional<VError> Preprocessor::_handle_import() {
-    _next_token(); // Eat the #import token
-                   
-    if (m_current_token.kind == TK_LBRACKET) {
-        // Local module import
-        _next_token(); // eat the '[' or '<'
-        if (m_current_token.kind != TK_IDENT) {
-            return VError::create_new(ERR_LEVEL_FATAL, "Expected an identifier but got {}", m_current_token.name);
-        }
-
-        // NOTE: We will add the module here soon. The way this works is subect to change
-        m_parent_file->add_dependency_module(m_current_token.name, nullptr);
-        _next_token(); // eat the identifier
-        if (m_current_token.kind != TK_RBRACKET) {
-            return VError::create_new(ERR_LEVEL_FATAL, "Expected an ']' but got {}", m_current_token.name);
-        }
-    } else if (m_current_token.kind == TK_LT) {
-        // Standard lib import
-        _next_token(); // eat the '[' or '<'
-        if (m_current_token.kind != TK_IDENT) {
-            return VError::create_new(ERR_LEVEL_FATAL, "Expected an identifier but got {}", m_current_token.name);
-        }
-
-        // NOTE: We will add the module here soon. The way this works is subect to change
-        m_parent_file->add_dependency_module(m_current_token.name, nullptr);
-        _next_token(); // eat the identifier
-        if (m_current_token.kind != TK_GT) {
-            return VError::create_new(ERR_LEVEL_FATAL, "Expected an '>' but got {}", m_current_token.name);
-        }
-    } else {
-        return VError::create_new(ERR_LEVEL_FATAL, "Expected '[' or '<'but got '{}'", m_current_token.name);
-    }
-
-    return std::nullopt;
-}
+// /// @brief Handle importing a module
+// std::optional<VError> Preprocessor::_handle_import() {
+//     _next_token(); // Eat the #import token
+//                    
+//     if (m_current_token.kind == TK_LBRACKET) {
+//         // Local module import
+//         _next_token(); // eat the '[' or '<'
+//         if (m_current_token.kind != TK_IDENT) {
+//             return VError::create_new(ERR_LEVEL_FATAL, "Expected an identifier but got {}", m_current_token.name);
+//         }
+// 
+//         // NOTE: We will add the module here soon. The way this works is subect to change
+//         m_parent_file->add_dependency_module(m_current_token.name, nullptr);
+//         _next_token(); // eat the identifier
+//         if (m_current_token.kind != TK_RBRACKET) {
+//             return VError::create_new(ERR_LEVEL_FATAL, "Expected an ']' but got {}", m_current_token.name);
+//         }
+//     } else if (m_current_token.kind == TK_LT) {
+//         // Standard lib import
+//         _next_token(); // eat the '[' or '<'
+//         if (m_current_token.kind != TK_IDENT) {
+//             return VError::create_new(ERR_LEVEL_FATAL, "Expected an identifier but got {}", m_current_token.name);
+//         }
+// 
+//         // NOTE: We will add the module here soon. The way this works is subect to change
+//         m_parent_file->add_dependency_module(m_current_token.name, nullptr);
+//         _next_token(); // eat the identifier
+//         if (m_current_token.kind != TK_GT) {
+//             return VError::create_new(ERR_LEVEL_FATAL, "Expected an '>' but got {}", m_current_token.name);
+//         }
+//     } else {
+//         return VError::create_new(ERR_LEVEL_FATAL, "Expected '[' or '<'but got '{}'", m_current_token.name);
+//     }
+// 
+//     return std::nullopt;
+// }
 
 
 
@@ -102,7 +102,7 @@ std::vector<token> Preprocessor::process() {
     while (m_current_token.kind != TK_EOF) {
         switch(m_current_token.kind) {
             case TK_PP_IMPORT:
-                _handle_import();
+                // _handle_import();
             default:
                 break;
         }

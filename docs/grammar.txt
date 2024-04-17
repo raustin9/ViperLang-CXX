@@ -1,0 +1,64 @@
+<program> ::= <top_level_stmt>*
+
+<top_level_stmt> ::= <variable_initialization> ";"
+                   | <procedure_definition>
+                   | <struct_definition>
+
+-- For struct definitions
+<struct_definition> ::= "struct" <identifier> <struct_body>
+<struct_body> ::= "{" <struct_fields> <struct_methods> "}"
+<struct_fields> ::= "fields" ":" <struct_field>+
+<struct_field> ::= <identifier> "::" <type_specifier> ";"
+<struct_methods> ::= "methods" ":" <struct_method>+
+<struct_method> ::= <procedure_definition>
+
+-- Procedures
+<procedure_definition> ::= "proc" <identifier> "(" <parameter_list> ")" ":" <type_specifier> <code_block>
+<parameter_list> ::= <parameter> ("," <parameter>)*
+                   | EPSILON
+<parameter> ::= <identifier> ":" <type_specifier>
+<code_block> ::= <stmt>*
+
+-- Inner code-block statements
+<stmt> ::= <variable_initialization> ";"
+         | <variable_declaration> ";"
+         | <expression_stmt> ";"
+         | <if_stmt>
+         | <while_loop_stmt>
+         | <for_loop_stmt>
+         | <assignment_stmt> ";"
+
+<variable_declaration> ::= "let" <identifier> ":" <type_specifier>
+<variable_initialization> ::= "let" <identifier> "=" <expression>
+
+<expression_stmt> ::= <expression>
+
+<if_stmt> ::= "if" <condition_expr> <code_block> (<elif_stmt>)
+<elif_stmt> ::= "elif" <condition_expr> <code_block> (<elif_stmt>)
+              | EPSILON
+
+<while_loop_stmt> ::= "while" <condition_expr> <code_block>
+
+<for_loop_stmt> ::= "for" "(" <for_loop_init> ";" <condition_expr> ";" <for_loop_action> ")" <code_block>
+<for_loop_init> ::= <variable_initialization>
+                  | <expression_stmt>
+                  | <assignment_stmt>
+                  | EPSILON
+<for_loop_action> ::= <expression_stmt>
+
+<assignment_stmt> ::= <identifier> "=" <expression>
+
+<expression> ::= <sum_expr>
+               ;
+<sum_expr> ::= <sum_expr> ("+" | "-") <product_expr>
+             | <product_expr>
+             ;
+<product_expr> ::= <product_expr> ("*" | "/" | "%") <primary_expr>
+                 | <primary_expr>
+                 ;
+<primary_expr> ::= <number_expr>
+                 | <identifier>
+                 | <call_expr>
+                 | "(" <expression> ")"
+                 ;
+<call_expr> ::= <identifier> "(" <argument_list> ")" 
