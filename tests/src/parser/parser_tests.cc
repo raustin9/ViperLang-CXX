@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <parser/parser.h>
 #include <tokenizer/tokenizer.h>
 #include "parser_test.h"
@@ -33,6 +34,23 @@ uint8_t parser_test_custom_typespec() {
                     "   let i: i32 = 5.0;\n"
                     "}\n"
                     ;
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+    ast->print_tree();
+
+    return result;
+}
+
+uint8_t parser_test_prefix() {
+    bool result = true;
+
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = 
+        "let i: i32 = -5.0;\n";
 
     viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
     viper::Parser parser = viper::Parser::create_new(&lexer);
@@ -82,4 +100,5 @@ void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_custom_typespec, "Test using identifier for type specifier");
     manager.register_test(parser_test_let, "Test top level var declarations");
     manager.register_test(parser_test_expressions, "Test expression parsing");
+    manager.register_test(parser_test_prefix, "Test parsing expressions with prefix operators");
 }

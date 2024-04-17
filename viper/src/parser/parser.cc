@@ -186,15 +186,18 @@ ResultNode Parser::parse_expr_infix(ExpressionNode* lhs) {
 ResultNode Parser::parse_expr_prefix() {
     ExpressionPrefixNode* expr = new ExpressionPrefixNode();
     token prefix = m_current_token;
-    if (get_operator_precedence(prefix) != precedence::PREFIX) {
+    if (!is_prefix_op(prefix)) {
+    // if (get_operator_precedence(prefix) != precedence::PREFIX) {
         return result::Err(VError::create_new(error_type::PARSER_ERR, "Invalid prefix operator {}. Did you mean ! or ~?", token::kind_to_str(prefix.kind)));
     }
     // token prefix = eat(); // eat the operator token
    
     expr->op = prefix;
+    (void) eat();
     
     ResultNode r_RHS = parse_expr(precedence::PREFIX);
     expr->rhs = static_cast<ExpressionNode*>(r_RHS.unwrap());
+
 
     return result::Ok(expr);
 }
@@ -473,7 +476,8 @@ std::shared_ptr<AST> Parser::parse() {
 
 /// @brief Look at the next token in the stream without advancing the current token
 token Parser::peek_token() {
-    return m_lexer->peek_token();
+    // return m_lexer->peek_token();
+    return m_peek_token;
 }
 
 

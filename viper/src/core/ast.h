@@ -18,7 +18,7 @@
 namespace viper {
 
 // Operator precedences
-using prec_e = enum class precedence {
+using prec_e = enum precedence {
     LOWEST = 0,
     ASSIGN,
     COMPARISON,
@@ -200,7 +200,7 @@ struct ExpressionPrefixNode : public ExpressionNode {
     ExpressionNode* rhs;
 
     void print() override {
-        std::printf("%s", token::kind_to_str(op.kind).c_str());
+        std::printf("%s", op.name.c_str());
         rhs->print();
     }
 };
