@@ -197,6 +197,26 @@ ResultNode Parser::parse_expr_identifier() {
         ident_expr->expr = expr;
         ident_expr->identifier = identifier;
         return result::Ok(ident_expr);
+    } else if (m_current_token.kind == TK_DOT) {
+        // Member access
+        // test_struct.field;
+        // test_struct.method();
+        (void) eat(TK_DOT);
+        ResultNode r_access_expr = parse_expr_identifier();
+        if (r_access_expr.is_err()) {
+            error_msgs.push_back(
+                VError::create_new(
+                    error_type::PARSER_ERR,
+                    "Parser::parse_expr_identifier: error parsing member access"
+                )
+            );
+        }
+        ExpressionNode* access_expr = static_cast<ExpressionNode*>(r_access_expr.unwrap_or(new ExpressionNode()));
+        ExpressionMemberAccessNode* member_expr = new ExpressionMemberAccessNode();
+        member_expr->identifier = identifier;
+        member_expr->access = access_expr;
+
+        return result::Ok(member_expr);
     }
 
     // TODO: . operator for member access

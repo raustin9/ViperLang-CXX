@@ -166,6 +166,25 @@ uint8_t parser_test_identifier_expression() {
     return result;
 }
 
+uint8_t parser_test_member_access_expression() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "let i: i32 = num_seconds.field;\n"
+                    "let i: i32 = num_milliseconds.method();\n"
+                    "let i: i32 = test_struct.method(1 + 2, num_seconds);\n";
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+
+    ast->print_tree();
+
+    return result;
+}
+
 uint8_t parser_test_identifier_dimension_expression() {
     bool result = true;
     
@@ -196,4 +215,5 @@ void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_str, "Test parsing string literal expressions");
     manager.register_test(parser_test_grouping_expression, "Test basic grouping expression parsing");
     manager.register_test(parser_test_identifier_dimension_expression, "Test basic identifier dimension access expression parsing");
+    manager.register_test(parser_test_member_access_expression, "Test member access expression parsing");
 }

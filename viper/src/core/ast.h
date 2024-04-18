@@ -251,6 +251,10 @@ struct ExpressionProcedureCallNode : public ExpressionNode {
     }
 };
 
+/* Represents an identifier reference
+ * num_seconds
+ * example_array[...]
+ */
 struct ExpressionIdentifierNode : public ExpressionNode {
     token identifier;
     ExpressionNode* expr; // for dimensional access
@@ -264,6 +268,23 @@ struct ExpressionIdentifierNode : public ExpressionNode {
         }
     }
 };
+
+
+/*
+ * Represents a member access expression for a struct
+ * test_struct.field;
+ * test_struct.method();
+ */
+struct ExpressionMemberAccessNode : public ExpressionNode {
+    token identifier;
+    ExpressionNode* access;
+
+    void print() override {
+        std::printf("%s.", identifier.name.c_str());
+        access->print();
+    }
+};
+
 
 /* Represents an integer literal */
 struct IntegerLiteralNode : public ExpressionNode {
