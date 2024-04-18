@@ -59,8 +59,8 @@ class Parser {
         ResultNode parse_let_statement();
         
         ResultNode parse_struct();
-        ResultNode parse_struct_body();
         ResultNode parse_struct_member();
+        ResultNode parse_struct_body();
 
         ResultNode parse_code_block();
         

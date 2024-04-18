@@ -359,6 +359,84 @@ ResultNode Parser::parse_expr_prefix() {
     return result::Ok(expr);
 }
 
+
+/// @brief Parse the definition of a struct
+/// struct Ident
+ResultNode Parser::parse_struct() {
+    StructDefinitionNode* struct_node = new StructDefinitionNode();
+    (void) eat(TK_STRUCT);
+    token identifier = m_current_token;
+    struct_node->identifier = identifier;
+    (void) eat(TK_IDENT);
+
+    // Read the definition body
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        ResultNode r_field = parse_struct_member();
+        if (r_field.is_err()) {
+            error_msgs.push_back(
+                VError::create_new(
+                    error_type::PARSER_ERR,
+                    "Parser::parse_struct: unable to parse member field or method!"
+                )
+            );
+        }
+        ASTNode* field = r_field.unwrap_or(new ASTNode());
+        struct_node->fields.push_back(field);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+    return result::Ok(struct_node);
+}
+
+
+ResultNode Parser::parse_struct_member() {
+    switch (m_current_token.kind) {
+        case TK_IDENT:
+            {
+                StructMemberFieldNode* field_node = new StructMemberFieldNode();
+                
+                token identifier = m_current_token;
+                (void) eat(TK_IDENT);
+                field_node->identifier = identifier;
+                
+                (void) eat(TK_DOUBLECOLON);
+                
+                ResultNode r_data_type = parse_data_type();
+                if (r_data_type.is_err()) {
+                    error_msgs.push_back(
+                        VError::create_new(
+                            error_type::PARSER_ERR,
+                            "Parser::parse_struct_member: unable to parse field data type"
+                        )
+                    );
+                }
+                ASTNode* data_type = r_data_type.unwrap_or(new ASTNode());
+                field_node->type_spec = data_type;
+
+                (void) eat(TK_SEMICOLON);
+                
+                return result::Ok(field_node);
+            }
+            break;
+        case TK_PROC: {
+            ResultNode r_method_node = parse_procedure();
+            if (r_method_node.is_err()) {
+                error_msgs.push_back(
+                    VError::create_new(
+                        error_type::PARSER_ERR,
+                        "Parser::parse_struct_member: unable to parse struct method!"
+                    )
+                );
+            }
+            ASTNode* method_node = r_method_node.unwrap_or(new ASTNode());
+            return result::Ok(method_node);
+        } break;
+        default:
+            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_struct_member: invalid token {}. Exected either identifier or 'proc'.", m_current_token.name));
+    }
+}
+
 // @brief Parse a variable definition. 
 // let x: i32 = 4 * 2;
 // let y: i32 = x;
@@ -574,6 +652,10 @@ std::shared_ptr<AST> Parser::parse() {
             } break;
             case TK_LET: {
                 auto node = parse_let_statement().unwrap();
+                m_ast->add_node(node);
+            } break;
+            case TK_STRUCT: {
+                auto node = parse_struct().unwrap();
                 m_ast->add_node(node);
             } break;
             default:

@@ -174,6 +174,39 @@ struct VariableDeclaration : public ASTNode {
     }
 };
 
+/* Represents the definition of a struct
+ * struct Test {
+ *     member :: type;
+ * }
+ */
+struct StructDefinitionNode : public ASTNode {
+    token identifier;
+    std::vector<ASTNode*> fields;
+
+    void print() override {
+        std::printf("struct %s {\n", identifier.name.c_str());
+        for (const auto& field : fields) {
+            std::printf("    ");
+            field->print();
+            std::printf("\n");
+        }
+        std::printf("}\n");
+    }
+};
+
+/* Represents a field member within a struct definition
+ * struct Test {
+ *     member :: type;
+ * }
+ */
+struct StructMemberFieldNode : public ASTNode {
+    token identifier;
+    ASTNode* type_spec;
+
+    void print() override {
+        std::printf("%s :: %s", identifier.name.c_str(), type_spec->tok.name.c_str());
+    }
+};
 
 /* Represents an expression. Evaluates to a value */
 struct ExpressionNode : public ASTNode {
@@ -183,7 +216,7 @@ struct ExpressionNode : public ASTNode {
  * x = 10 + b;
  * x + 2;
  */
-struct ExpressionStatementNode : public ASTNode{
+struct ExpressionStatementNode : public ASTNode {
     ExpressionNode* expr;
 
     void print() override {
