@@ -223,6 +223,17 @@ struct ExpressionBinaryNode : public ExpressionNode {
     }
 };
 
+/* Represents a string literal expression
+ * "example"
+ */
+struct ExpressionStringLiteralNode : public ExpressionNode {
+    token tok;
+
+    void print() override {
+        std::printf("\"%s\"", tok.name.c_str());
+    }
+};
+
 /* Represents a procedure call
  * foo()
  * bar(x + 1, num_seconds)

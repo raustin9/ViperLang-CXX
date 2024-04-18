@@ -98,11 +98,25 @@ ResultNode Parser::parse_expr_primary() {
         case token_kind::TK_IDENT: return parse_expr_identifier();
         
         case token_kind::TK_LPAREN: return parse_expr_grouping();
-        case token_kind::TK_STR: return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing string literals not implemented yet :(", token::kind_to_str(m_current_token.kind)));
+        case token_kind::TK_STR: return parse_expr_str();
         default:
             return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: Invalid token '{}' when parsing primary expression", token::kind_to_str(m_current_token.kind)));
     }
 }
+
+
+/// @brief Parse a string literal expression
+/// "string example"
+ResultNode Parser::parse_expr_str() {
+    ExpressionStringLiteralNode* str_expr = new ExpressionStringLiteralNode();
+    token str = m_current_token;
+    (void) eat(TK_STR);
+    
+    str_expr->tok = str;
+
+    return result::Ok(str_expr);
+}
+
 
 
 /// @brief Parse a grouping expression.

@@ -77,6 +77,22 @@ uint8_t parser_test_let() {
     return result;
 }
 
+uint8_t parser_test_str() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "let x: str = \"test string\";";
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+    ast->print_tree();
+
+    return result;
+}
+
 uint8_t parser_test_expression() {
     bool result = true;
     
@@ -159,5 +175,6 @@ void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_identifier_expression, "Test basic identifier expression parsing");
     manager.register_test(parser_test_expression_chain, "Test expression chain parsing");
     manager.register_test(parser_test_prefix, "Test parsing expressions with prefix operators");
+    manager.register_test(parser_test_str, "Test parsing string literal expressions");
     manager.register_test(parser_test_grouping_expression, "Test basic grouping expression parsing");
 }

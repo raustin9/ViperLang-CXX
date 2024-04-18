@@ -46,6 +46,7 @@ class Parser {
         // Primary Expressions
         ResultNode parse_expr_primary();
         ResultNode parse_expr_identifier();
+        ResultNode parse_expr_str();
         ResultNode parse_expr_grouping();
         ResultNode parse_expr_boolean();
         ResultNode parse_expr_integer();
