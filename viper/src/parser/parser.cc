@@ -182,7 +182,7 @@ ResultNode Parser::parse_expr() {
   
     /* See if we are at an infix (binary) operator.
      * If so, parse a binary expression */
-    if (get_operator_precedence(m_current_token) != precedence::INVALID_OP) {
+    while (get_operator_precedence(m_current_token) != precedence::INVALID_OP) {
         std::printf("GOT OP\n");
         r_lhs = parse_expr_binary(lhs, get_operator_precedence(m_current_token));
         if (r_lhs.is_err()) {
@@ -272,7 +272,8 @@ ResultNode Parser::parse_expr_prefix() {
     expr->op = prefix;
     (void) eat(prefix.kind).unwrap();
     
-    ResultNode r_RHS = parse_expr();
+    // ResultNode r_RHS = parse_expr();
+    ResultNode r_RHS = parse_expr_primary();
     expr->rhs = static_cast<ExpressionNode*>(r_RHS.unwrap());
 
 

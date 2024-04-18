@@ -99,7 +99,9 @@ uint8_t parser_test_expression_chain() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "let i: i32 = 1 + 2 * 3;\n";
+    file->content = "let i: i32 = 1 + 2 * 3;\n"
+                    "let i: i32 = 1 + 2 * 3 + 4;\n"
+                    "let i: i32 = 1 + 2 * -3 + 4;\n";
 
     viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
     viper::Parser parser = viper::Parser::create_new(&lexer);
