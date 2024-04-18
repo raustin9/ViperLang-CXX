@@ -113,12 +113,31 @@ uint8_t parser_test_expression_chain() {
     return result;
 }
 
+uint8_t parser_test_identifier_expression() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "let i: i32 = num_seconds;\n"
+                    "let i: i32 = num_milliseconds(num_seconds, 1 + 2 * 3);\n";
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+
+    ast->print_tree();
+
+    return result;
+}
+
 /// @brief Register 
 void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_basic, "Test simple parser behavior");
     manager.register_test(parser_test_custom_typespec, "Test using identifier for type specifier");
     manager.register_test(parser_test_let, "Test top level var declarations");
     manager.register_test(parser_test_expression, "Test basic single-expression parsing");
+    manager.register_test(parser_test_identifier_expression, "Test basic identifier expression parsing");
     manager.register_test(parser_test_expression_chain, "Test expression chain parsing");
     manager.register_test(parser_test_prefix, "Test parsing expressions with prefix operators");
 }

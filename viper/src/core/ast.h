@@ -223,6 +223,31 @@ struct ExpressionBinaryNode : public ExpressionNode {
     }
 };
 
+/* Represents a procedure call
+ * foo()
+ * bar(x + 1, num_seconds)
+ */
+struct ExpressionProcedureCallNode : public ExpressionNode {
+    token identifier;
+    std::vector<ExpressionNode*> arguments;
+    void print() override {
+        std::printf("%s(", identifier.name.c_str());
+        for (const auto& arg : arguments) {
+            arg->print();
+            std::printf(", ");
+        }
+        std::printf(")");
+    }
+};
+
+struct ExpressionIdentifierNode : public ExpressionNode {
+    token identifier;
+
+    void print() override {
+        std::printf("%s", identifier.name.c_str());
+    }
+};
+
 /* Represents an integer literal */
 struct IntegerLiteralNode : public ExpressionNode {
     IntegerLiteralNode(u64 value) : value(value) {}
