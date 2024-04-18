@@ -253,9 +253,15 @@ struct ExpressionProcedureCallNode : public ExpressionNode {
 
 struct ExpressionIdentifierNode : public ExpressionNode {
     token identifier;
+    ExpressionNode* expr; // for dimensional access
 
     void print() override {
         std::printf("%s", identifier.name.c_str());
+        if (expr != nullptr) {
+            std::printf("[");
+            expr->print();
+            std::printf("]");
+        }
     }
 };
 

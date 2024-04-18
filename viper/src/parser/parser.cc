@@ -176,11 +176,36 @@ ResultNode Parser::parse_expr_identifier() {
         (void) eat(TK_RPAREN);
         call_expr->identifier = identifier;
         return result::Ok(call_expr);
+    } else if (m_current_token.kind == TK_LBRACKET) {
+        // Dimension access
+        // ident[expr]
+        (void) eat(TK_LBRACKET);
+        ResultNode r_expr = parse_expr();
+        (void) eat(TK_RBRACKET);
+
+        if (r_expr.is_err()) {
+            error_msgs.push_back(
+                VError::create_new(
+                    error_type::PARSER_ERR,
+                    "Parser::parse_identifier: unable to parse expression for [] access!"
+                )
+            );
+        }
+        
+        ExpressionNode* expr = static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
+        ExpressionIdentifierNode* ident_expr = new ExpressionIdentifierNode();
+        ident_expr->expr = expr;
+        ident_expr->identifier = identifier;
+        return result::Ok(ident_expr);
     }
+
+    // TODO: . operator for member access
+    // TODO: [] operator for dimension access
 
     // If not procedure call, then normal variable reference
     ExpressionIdentifierNode* ident_expr = new ExpressionIdentifierNode();
     ident_expr->identifier = identifier;
+    ident_expr->expr = nullptr;
     return result::Ok(ident_expr);
 }
 
