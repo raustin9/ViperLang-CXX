@@ -223,6 +223,69 @@ struct ExpressionBinaryNode : public ExpressionNode {
     }
 };
 
+/* Represents a string literal expression
+ * "example"
+ */
+struct ExpressionStringLiteralNode : public ExpressionNode {
+    token tok;
+
+    void print() override {
+        std::printf("\"%s\"", tok.name.c_str());
+    }
+};
+
+/* Represents a procedure call
+ * foo()
+ * bar(x + 1, num_seconds)
+ */
+struct ExpressionProcedureCallNode : public ExpressionNode {
+    token identifier;
+    std::vector<ExpressionNode*> arguments;
+    void print() override {
+        std::printf("%s(", identifier.name.c_str());
+        for (const auto& arg : arguments) {
+            arg->print();
+            std::printf(", ");
+        }
+        std::printf(")");
+    }
+};
+
+/* Represents an identifier reference
+ * num_seconds
+ * example_array[...]
+ */
+struct ExpressionIdentifierNode : public ExpressionNode {
+    token identifier;
+    ExpressionNode* expr; // for dimensional access
+
+    void print() override {
+        std::printf("%s", identifier.name.c_str());
+        if (expr != nullptr) {
+            std::printf("[");
+            expr->print();
+            std::printf("]");
+        }
+    }
+};
+
+
+/*
+ * Represents a member access expression for a struct
+ * test_struct.field;
+ * test_struct.method();
+ */
+struct ExpressionMemberAccessNode : public ExpressionNode {
+    token identifier;
+    ExpressionNode* access;
+
+    void print() override {
+        std::printf("%s.", identifier.name.c_str());
+        access->print();
+    }
+};
+
+
 /* Represents an integer literal */
 struct IntegerLiteralNode : public ExpressionNode {
     IntegerLiteralNode(u64 value) : value(value) {}

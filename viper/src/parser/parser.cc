@@ -87,17 +87,146 @@ ResultNode Parser::parse_expr_primary() {
         case token_kind::TK_TILDE:
             return parse_expr_prefix();
 
+        // Boolean Expression
         case token_kind::TK_TRUE: return parse_expr_boolean();
         case token_kind::TK_FALSE: return parse_expr_boolean();
+       
+        // Numbers
         case token_kind::TK_NUM_FLOAT: return parse_expr_float();
         case token_kind::TK_NUM_INT: return parse_expr_integer();
         
-        case token_kind::TK_LPAREN: return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing grouping expression not implemented yet :(", token::kind_to_str(m_current_token.kind)));
-        case token_kind::TK_IDENT: return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing identifiers not implemented yet :(", token::kind_to_str(m_current_token.kind)));
-        case token_kind::TK_STR: return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: parsing string literals not implemented yet :(", token::kind_to_str(m_current_token.kind)));
+        case token_kind::TK_IDENT: return parse_expr_identifier();
+        
+        case token_kind::TK_LPAREN: return parse_expr_grouping();
+        case token_kind::TK_STR: return parse_expr_str();
         default:
             return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_primary: Invalid token '{}' when parsing primary expression", token::kind_to_str(m_current_token.kind)));
     }
+}
+
+
+/// @brief Parse a string literal expression
+/// "string example"
+ResultNode Parser::parse_expr_str() {
+    ExpressionStringLiteralNode* str_expr = new ExpressionStringLiteralNode();
+    token str = m_current_token;
+    (void) eat(TK_STR);
+    
+    str_expr->tok = str;
+
+    return result::Ok(str_expr);
+}
+
+
+
+/// @brief Parse a grouping expression.
+///        (1 + 3)
+///        (num_seconds * 4)
+ResultNode Parser::parse_expr_grouping() {
+    (void) eat(TK_LPAREN);
+    ResultNode expr =  parse_expr();
+    (void) eat(TK_RPAREN);
+    return expr;
+}
+
+
+/// @brief Parse an expression being passed to a procedure
+ResultNode Parser::parse_proc_argument() {
+    return parse_expr();
+}
+
+
+/// @brief Parse an identifier expression. This could
+///        be either a function call [foo(...)]
+///        or a variable reference [num_seconds]
+ResultNode Parser::parse_expr_identifier() {
+    token identifier = m_current_token;
+    (void) eat(TK_IDENT);
+
+    // See if we have a function call
+    if (m_current_token.kind == TK_LPAREN) {
+        (void) eat(TK_LPAREN);
+        ExpressionProcedureCallNode* call_expr = new ExpressionProcedureCallNode();
+        while (m_current_token.kind != TK_RPAREN) {
+            ResultNode r_arg_expr = parse_proc_argument();
+            if (r_arg_expr.is_err()) {
+                std::printf("COULD NOT PARSE ARG\n");
+                error_msgs.push_back(
+                    VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_identifier: unable to parse procedure argument")
+                );
+            }
+            ExpressionNode* arg_expr = static_cast<ExpressionNode*>(r_arg_expr.unwrap_or(new ExpressionNode()));
+            call_expr->arguments.push_back(arg_expr);
+
+            if (m_current_token.kind == TK_COMMA) {
+                (void) eat(TK_COMMA);
+            } else if (m_current_token.kind != TK_RPAREN) {
+                // If we do not read a comma, we need to read a ')'
+                // If we do not get that either, then this is an error
+                error_msgs.push_back(
+                    VError::create_new(
+                        error_type::PARSER_ERR, 
+                        "Expected to get ')' but got {}! when parsing procedure arguments!", 
+                        m_current_token.name
+                    )
+                );
+            }
+        }
+
+        (void) eat(TK_RPAREN);
+        call_expr->identifier = identifier;
+        return result::Ok(call_expr);
+    } else if (m_current_token.kind == TK_LBRACKET) {
+        // Dimension access
+        // ident[expr]
+        (void) eat(TK_LBRACKET);
+        ResultNode r_expr = parse_expr();
+        (void) eat(TK_RBRACKET);
+
+        if (r_expr.is_err()) {
+            error_msgs.push_back(
+                VError::create_new(
+                    error_type::PARSER_ERR,
+                    "Parser::parse_identifier: unable to parse expression for [] access!"
+                )
+            );
+        }
+        
+        ExpressionNode* expr = static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
+        ExpressionIdentifierNode* ident_expr = new ExpressionIdentifierNode();
+        ident_expr->expr = expr;
+        ident_expr->identifier = identifier;
+        return result::Ok(ident_expr);
+    } else if (m_current_token.kind == TK_DOT) {
+        // Member access
+        // test_struct.field;
+        // test_struct.method();
+        (void) eat(TK_DOT);
+        ResultNode r_access_expr = parse_expr_identifier();
+        if (r_access_expr.is_err()) {
+            error_msgs.push_back(
+                VError::create_new(
+                    error_type::PARSER_ERR,
+                    "Parser::parse_expr_identifier: error parsing member access"
+                )
+            );
+        }
+        ExpressionNode* access_expr = static_cast<ExpressionNode*>(r_access_expr.unwrap_or(new ExpressionNode()));
+        ExpressionMemberAccessNode* member_expr = new ExpressionMemberAccessNode();
+        member_expr->identifier = identifier;
+        member_expr->access = access_expr;
+
+        return result::Ok(member_expr);
+    }
+
+    // TODO: . operator for member access
+    // TODO: [] operator for dimension access
+
+    // If not procedure call, then normal variable reference
+    ExpressionIdentifierNode* ident_expr = new ExpressionIdentifierNode();
+    ident_expr->identifier = identifier;
+    ident_expr->expr = nullptr;
+    return result::Ok(ident_expr);
 }
 
 
@@ -141,33 +270,8 @@ ResultNode Parser::parse_expr_float() {
     return result::Ok(new FloatLiteralNode(value));
 }
 
-///// @brief Parse an expression sequence
-///// literal -> 4 | "hello, world" | ...keywords
-///// unary -> ~var | !var
-///// grouping -> "(" expression ")"
-//ResultNode Parser::parse_expr(prec_e precedence, ExpressionNode* lhs) {
-//    token prefix = m_current_token;
-//    ResultNode r_LHS;
-//    
-//    if (is_prefix_op(prefix) != precedence::INVALID_OP) {
-//        std::printf("Prefix operator\n");
-//        r_LHS = parse_expr_prefix();
-//    } else {
-//        r_LHS = parse_expr_primary();
-//    }
-//
-//    if (r_LHS.is_err()) {
-//        error_msgs.push_back(
-//            VError::create_new(
-//                error_type::PARSER_ERR,
-//                "Parser::parse_expr: invalid LHS"
-//            )
-//        );
-//    }
-//
-//    return result::Ok(r_LHS.unwrap());
-//}
 
+/// @brief Parse an expression
 ResultNode Parser::parse_expr() {
     ResultNode r_lhs = parse_expr_primary();
     if (r_lhs.is_err()) {
@@ -182,8 +286,8 @@ ResultNode Parser::parse_expr() {
   
     /* See if we are at an infix (binary) operator.
      * If so, parse a binary expression */
-    if (get_operator_precedence(m_current_token) != precedence::INVALID_OP) {
-        std::printf("GOT OP\n");
+    while (get_operator_precedence(m_current_token) != precedence::INVALID_OP) {
+        // std::printf("GOT OP\n");
         r_lhs = parse_expr_binary(lhs, get_operator_precedence(m_current_token));
         if (r_lhs.is_err()) {
             error_msgs.push_back(
@@ -194,11 +298,14 @@ ResultNode Parser::parse_expr() {
     }
 
     return result::Ok(lhs);
-
-
 }
 
-// 10 + 3 * 5
+
+// @brief Parse expressions according to operator precedence
+// @param lhs The left-hand-side of the binary expression
+// @param min_prec The minimum precedence (binding) for the lhs expression
+//                 Basically, if we find an operator that "binds" tighter
+//                 we then parse that binary expression first and so on
 ResultNode Parser::parse_expr_binary(ExpressionNode* lhs, prec_e min_prec) {
     token op = m_current_token;
     // prec_e op_prec = get_operator_precedence(op);
@@ -233,30 +340,6 @@ ResultNode Parser::parse_expr_binary(ExpressionNode* lhs, prec_e min_prec) {
 }
 
 
-/// @brief Parse an expression with an infix operator
-/// x + y
-/// w == true
-ResultNode Parser::parse_expr_infix(ExpressionNode* lhs) {
-    ExpressionBinaryNode* expr = new ExpressionBinaryNode();
-
-    expr->lhs = lhs;
-
-    // Get and eat the operator
-    token op = m_current_token;
-    // prec_e prec = get_operator_precedence(op);
-    expr->op = op;
-    (void) eat();
-    
-    ResultNode r_RHS = parse_expr();
-    if (r_RHS.is_err()) {
-        return result::Err(VError::create_new(error_type::PARSER_ERR, "Error parsing LHS expression parsing infix epxr"));
-    }
-    expr->rhs = static_cast<ExpressionNode*>(r_RHS.unwrap());
-
-    return result::Ok(expr);
-}
-
-
 /// @brief Parse an expression with a prefix operator
 /// !x
 /// ~x
@@ -264,17 +347,14 @@ ResultNode Parser::parse_expr_prefix() {
     ExpressionPrefixNode* expr = new ExpressionPrefixNode();
     token prefix = m_current_token;
     if (!is_prefix_op(prefix)) {
-    // if (get_operator_precedence(prefix) != precedence::PREFIX) {
         return result::Err(VError::create_new(error_type::PARSER_ERR, "Invalid prefix operator {}. Did you mean ! or ~?", token::kind_to_str(prefix.kind)));
     }
-    // token prefix = eat(); // eat the operator token
    
     expr->op = prefix;
     (void) eat(prefix.kind).unwrap();
     
-    ResultNode r_RHS = parse_expr();
+    ResultNode r_RHS = parse_expr_primary();
     expr->rhs = static_cast<ExpressionNode*>(r_RHS.unwrap());
-
 
     return result::Ok(expr);
 }
@@ -283,7 +363,6 @@ ResultNode Parser::parse_expr_prefix() {
 // let x: i32 = 4 * 2;
 // let y: i32 = x;
 ResultNode Parser::parse_let_statement() {
-    // Eat the 'let'
     (void) eat(TK_LET);
     
     // Get the variable name
@@ -294,7 +373,6 @@ ResultNode Parser::parse_let_statement() {
     }
     auto variable_ident_tok = variable_ident_res.unwrap_or(token::create_new(TK_IDENT, "__%internal_ident_err", m_current_token.line_num));
 
-    // Eat the ':'
     auto colon_res = eat(TK_COLON);
     if (colon_res.is_err()) {
         auto err = VError::create_new(
@@ -330,7 +408,6 @@ ResultNode Parser::parse_let_statement() {
 
     // Parse the expression it is being assigned to
     auto expr_res = parse_expr();
-    // auto expr_res = parse_expr(precedence::LOWEST);
     if (expr_res.is_err()) {
         auto err = VError::create_new(
             error_type::PARSER_ERR, 
@@ -356,15 +433,12 @@ ResultNode Parser::parse_let_statement() {
 
 /// @brief Parse a block of code
 ResultNode Parser::parse_code_block() {    
-    // Eat the "{"
     (void) eat(TK_LSQUIRLY);
     while (m_current_token.kind != TK_RSQUIRLY) {
         auto stmt_res = parse_statement();
 
     }
 
-
-    // Eat the "}"
     (void) eat(TK_RSQUIRLY);
     return result::Err(VError::create_new(error_type::PARSER_ERR, "parse_code_block not implemented yet!"));
 }
@@ -376,7 +450,7 @@ ResultNode Parser::parse_code_block() {
 ResultNode Parser::parse_procedure() {
     ProcedureNode *proc_node = new ProcedureNode();
     
-    // Eat the 'proc' token 
+    // Get the 'proc' token 
     token proc_token = m_current_token;
     auto r_proc =  eat(TK_PROC);
     if (r_proc.is_err()) {
@@ -396,11 +470,9 @@ ResultNode Parser::parse_procedure() {
     }
     proc_node->set_name(ident_tok.name);
 
-    // Eat the '('
     (void) eat(TK_LPAREN).unwrap_or(token::create_new(TK_LPAREN, "__%internal_lparen_err", m_current_token.line_num));
     
     // Parse the procedure parameters
-    // TODO: THIS IS NOT DONE
     while (m_current_token.kind != TK_RPAREN) {
         auto param = parse_proc_parameter()
             .unwrap_or(nullptr);
@@ -417,14 +489,10 @@ ResultNode Parser::parse_procedure() {
             );
         }
         
-        // Eat the ','
         (void) eat(TK_COMMA).unwrap();
     }
    
-    // Eat the ')'
     (void) eat(TK_RPAREN).unwrap_or(token::create_new(TK_RPAREN, "__%internal_rparen_err", m_current_token.line_num));
-
-    // Eat the ':'
     (void) eat(TK_COLON).unwrap_or(token::create_new(TK_COLON, "__%internal_colon_err", m_current_token.line_num));
 
     // Get the return type specification
@@ -434,7 +502,6 @@ ResultNode Parser::parse_procedure() {
     // Parse the code body
     (void) eat(TK_LSQUIRLY);
     while (m_current_token.kind != TK_RSQUIRLY) {
-        // std::printf("Parsing procedure stmt\n");
         auto stmt_res = parse_statement();
         if (stmt_res.is_err()) {
             error_msgs.push_back(stmt_res.unwrap_err());
@@ -444,9 +511,8 @@ ResultNode Parser::parse_procedure() {
         );
         proc_node->add_statement(stmt);
     }
-    // Eat the "}"
-    (void) eat(TK_RSQUIRLY);
     
+    (void) eat(TK_RSQUIRLY);
     return result::Ok(proc_node);
 }
 

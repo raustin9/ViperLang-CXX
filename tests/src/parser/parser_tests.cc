@@ -77,6 +77,22 @@ uint8_t parser_test_let() {
     return result;
 }
 
+uint8_t parser_test_str() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "let x: str = \"test string\";";
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+    ast->print_tree();
+
+    return result;
+}
+
 uint8_t parser_test_expression() {
     bool result = true;
     
@@ -99,7 +115,83 @@ uint8_t parser_test_expression_chain() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "let i: i32 = 1 + 2 * 3;\n";
+    file->content = "let i: i32 = 1 + 2 * 3;\n"
+                    "let i: i32 = 1 + 2 * 3 + 4;\n"
+                    "let i: i32 = 1 + 2 * -3 + 4;\n";
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+
+    ast->print_tree();
+
+    return result;
+}
+
+uint8_t parser_test_grouping_expression() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "let i: i32 = (1 + 2) * 3;\n"
+                    "let i: i32 = 1 + 2 * (3 + 4);\n"
+                    "let i: i32 = 1 + 2 * -3 + 4;\n";
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+
+    ast->print_tree();
+
+    return result;
+}
+
+uint8_t parser_test_identifier_expression() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "let i: i32 = num_seconds;\n"
+                    "let i: i32 = num_milliseconds(num_seconds, 1 + 2 * 3);\n";
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+
+    ast->print_tree();
+
+    return result;
+}
+
+uint8_t parser_test_member_access_expression() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "let i: i32 = num_seconds.field;\n"
+                    "let i: i32 = num_milliseconds.method();\n"
+                    "let i: i32 = test_struct.method(1 + 2, num_seconds);\n";
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+
+    ast->print_tree();
+
+    return result;
+}
+
+uint8_t parser_test_identifier_dimension_expression() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "let i: i32 = num_seconds[1 + 2];\n"
+                    "let i: i32 = num_milliseconds(num_seconds[1 + 2 * 3], 1 + 2 * 3);\n";
 
     viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
     viper::Parser parser = viper::Parser::create_new(&lexer);
@@ -117,6 +209,11 @@ void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_custom_typespec, "Test using identifier for type specifier");
     manager.register_test(parser_test_let, "Test top level var declarations");
     manager.register_test(parser_test_expression, "Test basic single-expression parsing");
+    manager.register_test(parser_test_identifier_expression, "Test basic identifier expression parsing");
     manager.register_test(parser_test_expression_chain, "Test expression chain parsing");
     manager.register_test(parser_test_prefix, "Test parsing expressions with prefix operators");
+    manager.register_test(parser_test_str, "Test parsing string literal expressions");
+    manager.register_test(parser_test_grouping_expression, "Test basic grouping expression parsing");
+    manager.register_test(parser_test_identifier_dimension_expression, "Test basic identifier dimension access expression parsing");
+    manager.register_test(parser_test_member_access_expression, "Test member access expression parsing");
 }

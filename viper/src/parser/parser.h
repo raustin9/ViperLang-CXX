@@ -42,15 +42,17 @@ class Parser {
         // ResultNode parse_expr(prec_e precedence = precedence::LOWEST, ExpressionNode* lhs = nullptr);
         ResultNode parse_expr();
         ResultNode parse_expr_binary(ExpressionNode* lhs, prec_e min_prec);
-        ResultNode parse_sum_expr();
 
+        // Primary Expressions
         ResultNode parse_expr_primary();
-//        ResultNode parse_expr_grouping();
-//        ResultNode parse_expr_identifier();
+        ResultNode parse_expr_identifier();
+        ResultNode parse_expr_str();
+        ResultNode parse_expr_grouping();
         ResultNode parse_expr_boolean();
         ResultNode parse_expr_integer();
         ResultNode parse_expr_float();
         ResultNode parse_expr_prefix();
+        ResultNode parse_proc_argument();
         ResultNode parse_expr_infix(ExpressionNode* lhs);
 
         ResultNode parse_statement();
@@ -59,7 +61,6 @@ class Parser {
         ResultNode parse_struct();
         ResultNode parse_struct_body();
         ResultNode parse_struct_member();
-
 
         ResultNode parse_code_block();
         
