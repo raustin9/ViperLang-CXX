@@ -20,6 +20,7 @@ namespace viper {
 // Operator precedences
 using prec_e = enum precedence {
     LOWEST = 0,
+    INVALID_OP,
     ASSIGN,
     COMPARISON,
     ADDSUB,
@@ -27,7 +28,6 @@ using prec_e = enum precedence {
     BITSHIFT,
     PREFIX,
     CALL,
-    INVALID_OP
 };
 
 /* The kind of node in the AST */
@@ -216,9 +216,9 @@ struct ExpressionBinaryNode : public ExpressionNode {
 
     void print() override {
         std::printf("[");
-        rhs->print();
-        std::printf(" ");
         lhs->print();
+        std::printf(" %s ", op.name.c_str());
+        rhs->print();
         std::printf("]");
     }
 };

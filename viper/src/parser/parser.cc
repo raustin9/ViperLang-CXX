@@ -81,6 +81,12 @@ ResultNode Parser::parse_statement() {
 
 ResultNode Parser::parse_expr_primary() {
     switch(m_current_token.kind) {
+        // Unary or prefix expressions
+        case token_kind::TK_BANG:
+        case token_kind::TK_MINUS:
+        case token_kind::TK_TILDE:
+            return parse_expr_prefix();
+
         case token_kind::TK_TRUE: return parse_expr_boolean();
         case token_kind::TK_FALSE: return parse_expr_boolean();
         case token_kind::TK_NUM_FLOAT: return parse_expr_float();
@@ -135,25 +141,95 @@ ResultNode Parser::parse_expr_float() {
     return result::Ok(new FloatLiteralNode(value));
 }
 
-/// @brief Parse an expression sequence
-/// literal -> 4 | "hello, world" | ...keywords
-/// unary -> ~var | !var
-/// grouping -> "(" expression ")"
-ResultNode Parser::parse_expr(prec_e precedence) {
-    token prefix = m_current_token;
-    ResultNode r_LHS;
-    
-    if (is_prefix_op(prefix) != precedence::INVALID_OP) {
-        std::printf("Prefix operator\n");
-        r_LHS = parse_expr_prefix();
-    } else {
-        r_LHS = parse_expr_primary();
+///// @brief Parse an expression sequence
+///// literal -> 4 | "hello, world" | ...keywords
+///// unary -> ~var | !var
+///// grouping -> "(" expression ")"
+//ResultNode Parser::parse_expr(prec_e precedence, ExpressionNode* lhs) {
+//    token prefix = m_current_token;
+//    ResultNode r_LHS;
+//    
+//    if (is_prefix_op(prefix) != precedence::INVALID_OP) {
+//        std::printf("Prefix operator\n");
+//        r_LHS = parse_expr_prefix();
+//    } else {
+//        r_LHS = parse_expr_primary();
+//    }
+//
+//    if (r_LHS.is_err()) {
+//        error_msgs.push_back(
+//            VError::create_new(
+//                error_type::PARSER_ERR,
+//                "Parser::parse_expr: invalid LHS"
+//            )
+//        );
+//    }
+//
+//    return result::Ok(r_LHS.unwrap());
+//}
+
+ResultNode Parser::parse_expr() {
+    ResultNode r_lhs = parse_expr_primary();
+    if (r_lhs.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(
+                error_type::PARSER_ERR,
+                "Parser::parse_expr: Expected expression!"
+            )
+        );
     }
-    
+    ExpressionNode* lhs = static_cast<ExpressionNode*>(r_lhs.unwrap_or(new ExpressionNode()));
+  
+    /* See if we are at an infix (binary) operator.
+     * If so, parse a binary expression */
+    if (get_operator_precedence(m_current_token) != precedence::INVALID_OP) {
+        std::printf("GOT OP\n");
+        r_lhs = parse_expr_binary(lhs, get_operator_precedence(m_current_token));
+        if (r_lhs.is_err()) {
+            error_msgs.push_back(
+                VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr: Unable to parse rhs of binary expression!")
+            );
+        }
+        lhs = static_cast<ExpressionNode*>(r_lhs.unwrap_or(new ExpressionNode()));
+    }
 
-    r_LHS = parse_expr_r(r_LHS.unwrap(), precedence);
+    return result::Ok(lhs);
 
-    return result::Ok(r_LHS.unwrap());
+
+}
+
+// 10 + 3 * 5
+ResultNode Parser::parse_expr_binary(ExpressionNode* lhs, prec_e min_prec) {
+    token op = m_current_token;
+    // prec_e op_prec = get_operator_precedence(op);
+    (void) eat(); // eat the operator
+
+    ResultNode r_rhs = parse_expr_primary();
+    if (r_rhs.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_binary: unable to parse RHS!")
+        );
+    }
+    ExpressionNode* rhs = static_cast<ExpressionNode*>(r_rhs.unwrap_or(new ExpressionNode()));
+
+    prec_e next_prec = get_operator_precedence(m_current_token);
+    if (next_prec > min_prec) {
+        r_rhs = parse_expr_binary(rhs, next_prec);
+        
+        if (r_rhs.is_err()) {
+            error_msgs.push_back(
+                VError::create_new(error_type::PARSER_ERR, "Parser::parse_expr_binary: unable to parse RHS!")
+            );
+        }
+        rhs = static_cast<ExpressionNode*>(r_rhs.unwrap_or(new ExpressionNode()));
+    }
+
+    ExpressionBinaryNode* expr = new ExpressionBinaryNode();
+    expr->lhs = lhs;
+    expr->op = op;
+    expr->rhs = rhs;
+
+    return result::Ok(expr);
 }
 
 
@@ -167,10 +243,11 @@ ResultNode Parser::parse_expr_infix(ExpressionNode* lhs) {
 
     // Get and eat the operator
     token op = m_current_token;
-    prec_e prec = get_operator_precedence(op);
+    // prec_e prec = get_operator_precedence(op);
+    expr->op = op;
     (void) eat();
     
-    ResultNode r_RHS = parse_expr(prec);
+    ResultNode r_RHS = parse_expr();
     if (r_RHS.is_err()) {
         return result::Err(VError::create_new(error_type::PARSER_ERR, "Error parsing LHS expression parsing infix epxr"));
     }
@@ -193,45 +270,14 @@ ResultNode Parser::parse_expr_prefix() {
     // token prefix = eat(); // eat the operator token
    
     expr->op = prefix;
-    (void) eat();
+    (void) eat(prefix.kind).unwrap();
     
-    ResultNode r_RHS = parse_expr(precedence::PREFIX);
+    ResultNode r_RHS = parse_expr();
     expr->rhs = static_cast<ExpressionNode*>(r_RHS.unwrap());
 
 
     return result::Ok(expr);
 }
-
-
-ResultNode Parser::parse_expr_r(ASTNode* expr, prec_e precedence) {
-    token op = m_current_token;
-   
-    // Get operator precedence. 
-    // If negative, the token 
-    // is not valid operator so return expression
-    prec_e prec = get_operator_precedence(op);
-    if (prec == precedence::INVALID_OP) {
-        // std::string str = std::format("Got non-op: {}", token::kind_to_str(op.kind));
-        // std::cout << str << "\n";
-        return result::Ok(expr);
-    }
-
-    // Eat the operator
-    (void) eat();
-
-    ResultNode r_RHS = parse_expr_primary();
-
-    token next_op = m_current_token;
-    prec_e next_prec = get_operator_precedence(m_current_token);
-    if (next_prec == precedence::INVALID_OP) {
-        // TODO: return a binary expression with the LHS and RHS
-        // return parse_expr_infix(static_cast<ExpressionNode*>(expr));
-        return result::Ok(expr);
-    }
-
-    return result::Ok(expr);
-}
-
 
 // @brief Parse a variable definition. 
 // let x: i32 = 4 * 2;
@@ -283,7 +329,8 @@ ResultNode Parser::parse_let_statement() {
     }
 
     // Parse the expression it is being assigned to
-    auto expr_res = parse_expr(precedence::LOWEST);
+    auto expr_res = parse_expr();
+    // auto expr_res = parse_expr(precedence::LOWEST);
     if (expr_res.is_err()) {
         auto err = VError::create_new(
             error_type::PARSER_ERR, 
@@ -504,6 +551,10 @@ token Parser::eat() {
 /// @brief Eat the expected token
 result::Result<token, VError> Parser::eat(token_kind type) {
     if (m_current_token.kind != type) {
+        std::printf("Parser::eat(type): meant to read [%s] but got [%s]!\n"
+                ,token::kind_to_str(type).c_str()
+                ,token::kind_to_str(m_current_token.kind).c_str()
+        );
         return result::Err(VError::create_new(
             error_type::PARSER_ERR,
             "Parser::eat: Expected {} but got {}\n",

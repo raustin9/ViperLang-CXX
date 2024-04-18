@@ -39,10 +39,12 @@ class Parser {
         token peek_token();
         token current_token();
 
-        ResultNode parse_expr_r(ASTNode* expr, prec_e precedence);
-        ResultNode parse_expr(prec_e precedence = precedence::LOWEST);
+        // ResultNode parse_expr(prec_e precedence = precedence::LOWEST, ExpressionNode* lhs = nullptr);
+        ResultNode parse_expr();
+        ResultNode parse_expr_binary(ExpressionNode* lhs, prec_e min_prec);
+        ResultNode parse_sum_expr();
+
         ResultNode parse_expr_primary();
-        ResultNode parse_expr_1(ExpressionNode* lhs, prec_e precedence);
 //        ResultNode parse_expr_grouping();
 //        ResultNode parse_expr_identifier();
         ResultNode parse_expr_boolean();
