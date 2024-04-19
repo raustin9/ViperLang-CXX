@@ -58,6 +58,9 @@ class Parser {
         ResultNode parse_statement();
         ResultNode parse_let_statement();
         ResultNode parse_return_statement();
+        ResultNode parse_if_statement();
+        ResultNode parse_elif_statement();
+        ResultNode parse_else_statement();
         
         ResultNode parse_struct();
         ResultNode parse_struct_member();

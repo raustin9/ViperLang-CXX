@@ -312,13 +312,13 @@ struct ProcParameter : public ASTNode {
 /* Represents the declaration of a new variable 
    let x: i32 = 0;
  * */
-struct VariableDeclaration : public ASTNode {
-    VariableDeclaration(
+struct VariableDeclarationNode : public ASTNode {
+    VariableDeclarationNode(
         const std::string& name,
         ASTNode* type_spec,
         ASTNode* expr
     ) : name(name), name_mangled(name), type_spec(type_spec), value(expr) {}
-    ~VariableDeclaration() {}
+    ~VariableDeclarationNode() {}
 
     std::string name;
     std::string name_mangled;
@@ -331,12 +331,50 @@ struct VariableDeclaration : public ASTNode {
     }
 };
 
+/* Represents a return statement from a function
+ * return x;
+ */
 struct ReturnStatementNode : public ASTNode {
     ExpressionNode* expr;
 
     void print() override {
         std::printf("return ");
         expr->print();
+    }
+};
+
+/* Represents a conditional statement
+ * if (condition) {
+ *  ...
+ * } elif (condition) {
+ *  ...
+ * } else {
+ *  ...
+ * }
+ */
+struct ConditionalStatementNode : public ASTNode {
+    token tok;
+    ExpressionNode* condition;  // condition to evaluate 
+    std::vector<ASTNode*> body; // code body
+
+    ASTNode* else_claus;        // else of elif statement
+    
+    void print() {
+        std::printf("%s ", tok.name.c_str());
+        if (condition != nullptr) {
+            condition->print();
+        }
+        std::printf(" {\n");
+        for (const auto& stmt : body) {
+            std::printf("    ");
+            stmt->print();
+        }
+        std::printf("\n}");
+
+        if (else_claus != nullptr) {
+            else_claus->print();
+        }
+        std::printf("\n");
     }
 };
 

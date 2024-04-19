@@ -68,6 +68,35 @@ uint8_t parser_return_basic() {
     return result;
 }
 
+
+uint8_t parser_conditionals() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+                    "   let i: i32 = 5.0;\n"
+                    "   if 1 + 2 {\n"
+                    "       let u: i32 = 0 + i;\n"
+                    "   } elif i + 5 {\n"
+                    "       let v: i32 = 5;\n"
+                    "   } else {\n"
+                    "       let k: i32 = 3;\n"
+                    "       let t: i32 = k + 1;\n"
+                    "   }\n"
+                    "}\n"
+                    ;
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+    ast->print_tree();
+
+    return result;
+}
+
+
 uint8_t parser_test_custom_typespec() {
     bool result = true;
     
@@ -249,6 +278,7 @@ uint8_t parser_test_identifier_dimension_expression() {
 /// @brief Register 
 void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_basic, "Test simple parser behavior");
+    manager.register_test(parser_conditionals, "Test parsing of conditional if-elif-else chain");
     manager.register_test(parser_struct_basic, "Test parsing of simple struct definition");
     manager.register_test(parser_return_basic, "Test the parsing of a simple return statement from a function");
     manager.register_test(parser_test_custom_typespec, "Test using identifier for type specifier");
