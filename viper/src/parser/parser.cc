@@ -17,6 +17,8 @@ Parser::Parser() {
     operator_precedences[TK_EQUALTO] = precedence::COMPARISON;
     operator_precedences[TK_PLUSEQ] = precedence::COMPARISON;
     operator_precedences[TK_MINUSEQ] = precedence::COMPARISON;
+    operator_precedences[TK_LOG_OR] = precedence::LOGICAL_OR_AND;
+    operator_precedences[TK_LOG_AND] = precedence::LOGICAL_OR_AND;
     operator_precedences[TK_LT] = precedence::COMPARISON;
     operator_precedences[TK_GT] = precedence::COMPARISON;
     operator_precedences[TK_LTEQ] = precedence::COMPARISON;
@@ -73,9 +75,33 @@ ResultNode Parser::parse_statement() {
             // std::printf("Parsing let statement\n");
             return parse_let_statement();
         } break;
+        case TK_RETURN: {
+            // std::printf("Parsing let statement\n");
+            return parse_return_statement();
+        } break;
         default:
             return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_statement: Unexpected token {}", token::kind_to_str(m_current_token.kind)));
     }
+}
+
+
+/// @brief Parse the return statement
+ResultNode Parser::parse_return_statement() {
+    ReturnStatementNode* return_node = new ReturnStatementNode();
+    (void) eat(TK_RETURN);
+    ResultNode r_expr = parse_expr();
+    if (r_expr.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(
+                error_type::PARSER_ERR,
+                "Parser::parse_return_statement: unable to parse expression!"
+            )
+        );
+    }
+    ExpressionNode* expr = static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
+    return_node->expr = expr;
+    (void) eat(TK_SEMICOLON);
+    return result::Ok(return_node);
 }
 
 
