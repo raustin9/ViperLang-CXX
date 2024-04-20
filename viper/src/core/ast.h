@@ -22,8 +22,8 @@ using prec_e = enum precedence {
     LOWEST = 0,
     INVALID_OP,
     ASSIGN,
-    COMPARISON,
     LOGICAL_OR_AND,
+    COMPARISON,
     ADDSUB,
     MULDIVMOD,
     BITSHIFT,
@@ -396,6 +396,7 @@ struct WhileLoopStatementNode : public ASTNode {
         for (const auto& stmt : body) {
             std::printf("    ");
             stmt->print();
+            std::printf("\n");
         }
         std::printf("\n}\n");
     }
@@ -415,12 +416,41 @@ struct DoWhileLoopStatementNode : public ASTNode {
         for (const auto& stmt : body) {
             std::printf("    ");
             stmt->print();
+            std::printf("\n");
         }
         std::printf("\n} while ");
         if (condition != nullptr) {
             condition->print();
         }
         std::printf("\n");
+    }
+};
+
+/* Represents a for loop
+ * for (init; condition; action) {...}
+ */
+struct ForLoopStatementNode : public ASTNode {
+    ASTNode* initialization;
+    ExpressionNode* condition;
+    ASTNode* action;
+
+    std::vector<ASTNode*> body;
+
+    void print() override {
+        std::printf("for (");
+        initialization->print();
+        std::printf("; ");
+        condition->print();
+        std::printf("; ");
+        action->print();
+        std::printf(") {\n");
+        
+        for (const auto& stmt : body) {
+            std::printf("    ");
+            stmt->print();
+            std::printf("\n");
+        }
+        std::printf("}\n");
     }
 };
 

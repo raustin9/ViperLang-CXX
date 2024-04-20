@@ -10,7 +10,7 @@ using ResultNode = result::Result<ASTNode*, VError>;
 using ResultToken = result::Result<token, VError>;
 
 Parser::Parser() {
-    // operator_precedences[TK_ASSIGN] = precedence::ASSIGN;
+    operator_precedences[TK_ASSIGN] = precedence::ASSIGN;
     operator_precedences[TK_TIMESEQ] = precedence::ASSIGN;
     operator_precedences[TK_DIVEQ] = precedence::ASSIGN;
     operator_precedences[TK_MODEQ] = precedence::ASSIGN;
@@ -85,8 +85,10 @@ ResultNode Parser::parse_statement() {
             return parse_while_statement();
         } break;
         case TK_DO: {
-            std::printf("JFDLSJFSDFJKSLDJFKLSDFJ\n");
             return parse_do_while_statement();
+        } break;
+        case TK_FOR: {
+            return parse_for_statement();
         } break;
         default:
             return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_statement: Unexpected token {}", token::kind_to_str(m_current_token.kind)));
@@ -202,6 +204,22 @@ ResultNode Parser::parse_while_statement() {
     return result::Ok(while_loop_node);
 }
 
+
+/// @brief Parse an expression statement
+/// i = 22 + 4;
+ResultNode Parser::parse_expression_statement() {
+    ExpressionStatementNode* expr_stmt = new ExpressionStatementNode();
+    ResultNode r_expr = parse_expr();
+    if (r_expr.is_err()) {
+        error_msgs.push_back(r_expr.unwrap_err());
+    }
+    ExpressionNode* expr = 
+        static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
+
+    expr_stmt->expr = expr;
+    return result::Ok(expr_stmt);
+}
+
 /// @brief Parse a do-while loop statement
 /// do {
 ///     ...
@@ -241,6 +259,61 @@ ResultNode Parser::parse_do_while_statement() {
 
     (void) eat(TK_SEMICOLON);
     return result::Ok(do_while_node);
+}
+
+
+/// @brief Parse a for loop statement
+/// for (init; condition; action) {...}
+/// for (let i: i32 = 0; i < 10; i += 1) {...}
+ResultNode Parser::parse_for_statement() {
+    ForLoopStatementNode* for_node = new ForLoopStatementNode();
+    (void) eat(TK_FOR);
+    (void) eat(TK_LPAREN);
+
+    // Parse the initialization
+    ResultNode r_init_node = parse_statement();
+    if (r_init_node.is_err()) {
+        error_msgs.push_back(r_init_node.unwrap_err());
+    }
+    ASTNode* init_node = r_init_node.unwrap_or(new ASTNode());
+    // (void) eat(TK_SEMICOLON);
+
+    // Parse the condition
+    ResultNode r_condition = parse_expr();
+    if (r_init_node.is_err()) {
+        error_msgs.push_back(r_init_node.unwrap_err());
+    }
+    ExpressionNode* condition = 
+        static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
+    (void) eat(TK_SEMICOLON);
+
+    // Parse the action
+    ResultNode r_action_node = parse_expression_statement();
+    if (r_action_node.is_err()) {
+        error_msgs.push_back(r_action_node.unwrap_err());
+    }
+    ASTNode* action_node = r_action_node.unwrap_or(new ASTNode());
+    (void) eat(TK_RPAREN);
+
+    // Parse code body
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        for_node->body.push_back(stmt);
+    }
+    (void) eat(TK_RSQUIRLY);
+
+    for_node->initialization = init_node;
+    for_node->condition = condition;
+    for_node->action = action_node;
+
+    return result::Ok(for_node);
 }
 
 

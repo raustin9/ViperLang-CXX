@@ -96,6 +96,28 @@ uint8_t parser_conditionals() {
     return result;
 }
 
+uint8_t parser_for_loop() {
+    bool result = true;
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+                    "   let i: i32 = 5.0;\n"
+                    "   for (let i: i32 = 0; i < 5; i += 1 * 3) {\n"
+                    "       let u: i32 = 0 + i;\n"
+                    "   }\n"
+                    "}\n"
+                    ;
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+    ast->print_tree();
+
+    return result;
+}
+
 
 uint8_t parser_while_loop() {
     bool result = true;
@@ -332,6 +354,7 @@ uint8_t parser_test_identifier_dimension_expression() {
 void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_basic, "Test simple parser behavior");
     manager.register_test(parser_conditionals, "Test parsing of conditional if-elif-else chain");
+    manager.register_test(parser_for_loop, "Test parsing of for loop");
     manager.register_test(parser_while_loop, "Test parsing of while loops");
     manager.register_test(parser_do_while_loop, "Test parsing of do-while loops");
     manager.register_test(parser_struct_basic, "Test parsing of simple struct definition");
