@@ -28,12 +28,12 @@ enum token_kind {
     TK_SWITCH,
     TK_CASE,
     TK_DEFAULT,
-    TK_DO,
 
     TK_MODULE,
     TK_VOID,
     TK_FOR,
     TK_WHILE,
+    TK_DO,
     TK_IF,
     TK_ELIF,
     TK_ELSE,

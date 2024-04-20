@@ -85,6 +85,7 @@ ResultNode Parser::parse_statement() {
             return parse_while_statement();
         } break;
         case TK_DO: {
+            std::printf("JFDLSJFSDFJKSLDJFKLSDFJ\n");
             return parse_do_while_statement();
         } break;
         default:
@@ -207,6 +208,7 @@ ResultNode Parser::parse_while_statement() {
 /// } while (condition);
 ResultNode Parser::parse_do_while_statement() {
     DoWhileLoopStatementNode* do_while_node = new DoWhileLoopStatementNode();
+    std::printf("FJDSKLFJLSD\n");
     (void) eat(TK_DO);
 
     (void) eat(TK_LSQUIRLY);
@@ -222,7 +224,7 @@ ResultNode Parser::parse_do_while_statement() {
     }
 
     (void) eat(TK_RSQUIRLY);
-    (void) eat(TK_DO);
+    (void) eat(TK_WHILE);
     
     ResultNode r_condition = parse_expr();
     if (r_condition.is_err()) {

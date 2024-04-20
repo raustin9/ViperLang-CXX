@@ -123,6 +123,33 @@ uint8_t parser_while_loop() {
 }
 
 
+uint8_t parser_do_while_loop() {
+    bool result = true;
+    std::printf("DO WHILE\n");
+    
+    viper::VFile* file = viper::VFile::create_new_ptr();
+    file->name = "test.viper";
+    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+                    "   let i: i32 = 5.0;\n"
+                    "   do {\n"
+                    "       let i: i32 = 5 + 1;\n"
+                    "       if (i + 2) {\n"
+                    "           let u: i32 = 5;\n"
+                    "       }\n"
+                    "   } while (i + 2);\n"
+                    "}\n"
+                    ;
+
+    viper::Tokenizer lexer = viper::Tokenizer::create_new(file);
+    viper::Parser parser = viper::Parser::create_new(&lexer);
+
+    auto ast = parser.parse();
+    ast->print_tree();
+
+    return result;
+}
+
+
 uint8_t parser_test_custom_typespec() {
     bool result = true;
     
@@ -306,6 +333,7 @@ void parser_register_tests(TestManager &manager) {
     manager.register_test(parser_test_basic, "Test simple parser behavior");
     manager.register_test(parser_conditionals, "Test parsing of conditional if-elif-else chain");
     manager.register_test(parser_while_loop, "Test parsing of while loops");
+    manager.register_test(parser_do_while_loop, "Test parsing of do-while loops");
     manager.register_test(parser_struct_basic, "Test parsing of simple struct definition");
     manager.register_test(parser_return_basic, "Test the parsing of a simple return statement from a function");
     manager.register_test(parser_test_custom_typespec, "Test using identifier for type specifier");
