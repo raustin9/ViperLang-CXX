@@ -10,13 +10,15 @@ using ResultNode = result::Result<ASTNode*, VError>;
 using ResultToken = result::Result<token, VError>;
 
 Parser::Parser() {
-    // operator_precedences[TK_ASSIGN] = precedence::ASSIGN;
+    operator_precedences[TK_ASSIGN] = precedence::ASSIGN;
     operator_precedences[TK_TIMESEQ] = precedence::ASSIGN;
     operator_precedences[TK_DIVEQ] = precedence::ASSIGN;
     operator_precedences[TK_MODEQ] = precedence::ASSIGN;
     operator_precedences[TK_EQUALTO] = precedence::COMPARISON;
     operator_precedences[TK_PLUSEQ] = precedence::COMPARISON;
     operator_precedences[TK_MINUSEQ] = precedence::COMPARISON;
+    operator_precedences[TK_LOG_OR] = precedence::LOGICAL_OR_AND;
+    operator_precedences[TK_LOG_AND] = precedence::LOGICAL_OR_AND;
     operator_precedences[TK_LT] = precedence::COMPARISON;
     operator_precedences[TK_GT] = precedence::COMPARISON;
     operator_precedences[TK_LTEQ] = precedence::COMPARISON;
@@ -71,11 +73,367 @@ ResultNode Parser::parse_statement() {
     switch(m_current_token.kind) {
         case TK_LET: {
             // std::printf("Parsing let statement\n");
-            return parse_let_statement();
+            ResultNode node = parse_let_statement();
+            (void) eat(TK_SEMICOLON);
+            return node;
+        } break;
+        case TK_RETURN: {
+            ResultNode node = parse_return_statement();
+            (void) eat(TK_SEMICOLON);
+            return node;
+        } break;
+        case TK_IF: {
+            return parse_if_statement();
+        } break;
+        case TK_WHILE: {
+            return parse_while_statement();
+        } break;
+        case TK_DO: {
+            ResultNode node = parse_do_while_statement();
+            (void) eat(TK_SEMICOLON);
+            return node;
+        } break;
+        case TK_FOR: {
+            return parse_for_statement();
         } break;
         default:
-            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_statement: Unexpected token {}", token::kind_to_str(m_current_token.kind)));
+            ResultNode node = parse_expression_statement();
+            (void) eat(TK_SEMICOLON);
+            return node;
     }
+}
+
+
+/// @brief Parse an if statement
+/// Represents a conditional statement
+/// if (condition) {
+///  ...
+/// } elif (condition) {
+///  ...
+/// } else {
+///  ...
+/// }
+ResultNode Parser::parse_if_statement() {
+    ConditionalStatementNode* condition_node = new ConditionalStatementNode();
+    condition_node->tok = m_current_token;
+    (void) eat(TK_IF);
+
+    ResultNode r_condition = parse_expr();
+    if (r_condition.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(
+                error_type::PARSER_ERR,
+                "Parser::parse_if_statement: unable to parse condition expression"
+            )
+        );
+    }
+    ExpressionNode* condition = 
+        static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
+    condition_node->condition = condition;
+
+    // Parse the code body
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        condition_node->body.push_back(stmt);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+
+    switch (m_current_token.kind) {
+        case TK_ELIF: { // elif clause
+            ResultNode r_elif_node = parse_elif_statement();
+            if (r_elif_node.is_err()) {
+                error_msgs.push_back(r_elif_node.unwrap_err());
+            }
+            ConditionalStatementNode* elif_node = 
+                static_cast<ConditionalStatementNode*>(r_elif_node.unwrap_or(new ConditionalStatementNode()));
+
+            condition_node->else_claus = elif_node;
+        } break;
+        case TK_ELSE: { // else clause
+            ResultNode r_else_node = parse_else_statement();
+            if (r_else_node.is_err()) {
+                error_msgs.push_back(r_else_node.unwrap_err());
+            }
+            ConditionalStatementNode* else_node = 
+                static_cast<ConditionalStatementNode*>(r_else_node.unwrap_or(new ConditionalStatementNode()));
+
+            condition_node->else_claus = else_node;
+        } break;
+        default:
+            condition_node->else_claus = nullptr;
+            break;
+    }
+
+    return result::Ok(condition_node);
+}
+
+
+/// @brief Parse a while loop statement
+ResultNode Parser::parse_while_statement() {
+    WhileLoopStatementNode* while_loop_node = new WhileLoopStatementNode();
+    while_loop_node->tok = m_current_token;
+    (void) eat(TK_WHILE);
+
+    ResultNode r_condition = parse_expr();
+    if (r_condition.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(
+                error_type::PARSER_ERR,
+                "Parser::parse_if_statement: unable to parse condition expression"
+            )
+        );
+    }
+    ExpressionNode* condition = 
+        static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
+    while_loop_node->condition = condition;
+
+    // Parse the code body
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        while_loop_node->body.push_back(stmt);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+    return result::Ok(while_loop_node);
+}
+
+
+/// @brief Parse an expression statement
+/// i = 22 + 4;
+ResultNode Parser::parse_expression_statement() {
+    ExpressionStatementNode* expr_stmt = new ExpressionStatementNode();
+    ResultNode r_expr = parse_expr();
+    if (r_expr.is_err()) {
+        error_msgs.push_back(r_expr.unwrap_err());
+    }
+    ExpressionNode* expr = 
+        static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
+
+    expr_stmt->expr = expr;
+    return result::Ok(expr_stmt);
+}
+
+/// @brief Parse a do-while loop statement
+/// do {
+///     ...
+/// } while (condition);
+ResultNode Parser::parse_do_while_statement() {
+    DoWhileLoopStatementNode* do_while_node = new DoWhileLoopStatementNode();
+    std::printf("FJDSKLFJLSD\n");
+    (void) eat(TK_DO);
+
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        do_while_node->body.push_back(stmt);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+    (void) eat(TK_WHILE);
+    
+    ResultNode r_condition = parse_expr();
+    if (r_condition.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(
+                error_type::PARSER_ERR,
+                "Parser::parse_if_statement: unable to parse condition expression"
+            )
+        );
+    }
+    ExpressionNode* condition = 
+        static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
+    do_while_node->condition = condition;
+
+    return result::Ok(do_while_node);
+}
+
+
+/// @brief Parse a for loop statement
+/// for (init; condition; action) {...}
+/// for (let i: i32 = 0; i < 10; i += 1) {...}
+ResultNode Parser::parse_for_statement() {
+    ForLoopStatementNode* for_node = new ForLoopStatementNode();
+    (void) eat(TK_FOR);
+    (void) eat(TK_LPAREN);
+
+    // Parse the initialization
+    ResultNode r_init_node = parse_statement();
+    if (r_init_node.is_err()) {
+        error_msgs.push_back(r_init_node.unwrap_err());
+    }
+    ASTNode* init_node = r_init_node.unwrap_or(new ASTNode());
+    // (void) eat(TK_SEMICOLON);
+
+    // Parse the condition
+    ResultNode r_condition = parse_expr();
+    if (r_init_node.is_err()) {
+        error_msgs.push_back(r_init_node.unwrap_err());
+    }
+    ExpressionNode* condition = 
+        static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
+    (void) eat(TK_SEMICOLON);
+
+    // Parse the action
+    ResultNode r_action_node = parse_expression_statement();
+    if (r_action_node.is_err()) {
+        error_msgs.push_back(r_action_node.unwrap_err());
+    }
+    ASTNode* action_node = r_action_node.unwrap_or(new ASTNode());
+    (void) eat(TK_RPAREN);
+
+    // Parse code body
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        for_node->body.push_back(stmt);
+    }
+    (void) eat(TK_RSQUIRLY);
+
+    for_node->initialization = init_node;
+    for_node->condition = condition;
+    for_node->action = action_node;
+
+    return result::Ok(for_node);
+}
+
+
+/// @brief Parse elif clause portion of a conditional
+ResultNode Parser::parse_elif_statement() {
+    ConditionalStatementNode* elif_node = new ConditionalStatementNode();
+    elif_node->tok = m_current_token;
+    (void) eat(TK_ELIF);
+
+    ResultNode r_condition = parse_expr();
+    if (r_condition.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(
+                error_type::PARSER_ERR,
+                "Parser::parse_if_statement: unable to parse condition expression"
+            )
+        );
+    }
+    ExpressionNode* condition = 
+        static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
+    elif_node->condition = condition;
+
+    // Parse the code body
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto r_stmt = parse_statement();
+        if (r_stmt.is_err()) {
+            error_msgs.push_back(r_stmt.unwrap_err());
+        }
+        ASTNode* stmt = r_stmt.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        elif_node->body.push_back(stmt);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+
+    switch (m_current_token.kind) {
+        case TK_ELIF: { // elif clause
+            ResultNode r_elif_node = parse_elif_statement();
+            if (r_elif_node.is_err()) {
+                error_msgs.push_back(r_elif_node.unwrap_err());
+            }
+            ConditionalStatementNode* node = 
+                static_cast<ConditionalStatementNode*>(r_elif_node.unwrap_or(new ConditionalStatementNode()));
+
+            elif_node->else_claus = node;
+        } break;
+        case TK_ELSE: { // else clause
+            ResultNode r_elif_node = parse_else_statement();
+            if (r_elif_node.is_err()) {
+                error_msgs.push_back(r_elif_node.unwrap_err());
+            }
+            ConditionalStatementNode* node = 
+                static_cast<ConditionalStatementNode*>(r_elif_node.unwrap_or(new ConditionalStatementNode()));
+
+            elif_node->else_claus = node;
+        } break;
+        default:
+            elif_node->else_claus = nullptr;
+            break;
+    }
+    return result::Ok(elif_node);
+}
+
+
+/// @brief Parse elif clause portion of a conditional
+ResultNode Parser::parse_else_statement() {
+    ConditionalStatementNode* else_node = new ConditionalStatementNode();
+    else_node->tok = m_current_token;
+    (void) eat(TK_ELSE);
+
+    // No condition for else claus
+    else_node->condition = nullptr;
+
+    // Parse the code body
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto r_stmt = parse_statement();
+        if (r_stmt.is_err()) {
+            error_msgs.push_back(r_stmt.unwrap_err());
+        }
+        ASTNode* stmt = r_stmt.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        else_node->body.push_back(stmt);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+    else_node->else_claus = nullptr;
+
+    // Else marks the end of the conditional chain
+
+    return result::Ok(else_node);
+}
+
+
+/// @brief Parse the return statement
+ResultNode Parser::parse_return_statement() {
+    ReturnStatementNode* return_node = new ReturnStatementNode();
+    (void) eat(TK_RETURN);
+    ResultNode r_expr = parse_expr();
+    if (r_expr.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(
+                error_type::PARSER_ERR,
+                "Parser::parse_return_statement: unable to parse expression!"
+            )
+        );
+    }
+    ExpressionNode* expr = static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
+    return_node->expr = expr;
+    return result::Ok(return_node);
 }
 
 
@@ -359,6 +717,84 @@ ResultNode Parser::parse_expr_prefix() {
     return result::Ok(expr);
 }
 
+
+/// @brief Parse the definition of a struct
+/// struct Ident
+ResultNode Parser::parse_struct() {
+    StructDefinitionNode* struct_node = new StructDefinitionNode();
+    (void) eat(TK_STRUCT);
+    token identifier = m_current_token;
+    struct_node->identifier = identifier;
+    (void) eat(TK_IDENT);
+
+    // Read the definition body
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        ResultNode r_field = parse_struct_member();
+        if (r_field.is_err()) {
+            error_msgs.push_back(
+                VError::create_new(
+                    error_type::PARSER_ERR,
+                    "Parser::parse_struct: unable to parse member field or method!"
+                )
+            );
+        }
+        ASTNode* field = r_field.unwrap_or(new ASTNode());
+        struct_node->fields.push_back(field);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+    return result::Ok(struct_node);
+}
+
+
+ResultNode Parser::parse_struct_member() {
+    switch (m_current_token.kind) {
+        case TK_IDENT:
+            {
+                StructMemberFieldNode* field_node = new StructMemberFieldNode();
+                
+                token identifier = m_current_token;
+                (void) eat(TK_IDENT);
+                field_node->identifier = identifier;
+                
+                (void) eat(TK_DOUBLECOLON);
+                
+                ResultNode r_data_type = parse_data_type();
+                if (r_data_type.is_err()) {
+                    error_msgs.push_back(
+                        VError::create_new(
+                            error_type::PARSER_ERR,
+                            "Parser::parse_struct_member: unable to parse field data type"
+                        )
+                    );
+                }
+                ASTNode* data_type = r_data_type.unwrap_or(new ASTNode());
+                field_node->type_spec = data_type;
+
+                (void) eat(TK_SEMICOLON);
+                
+                return result::Ok(field_node);
+            }
+            break;
+        case TK_PROC: {
+            ResultNode r_method_node = parse_procedure();
+            if (r_method_node.is_err()) {
+                error_msgs.push_back(
+                    VError::create_new(
+                        error_type::PARSER_ERR,
+                        "Parser::parse_struct_member: unable to parse struct method!"
+                    )
+                );
+            }
+            ASTNode* method_node = r_method_node.unwrap_or(new ASTNode());
+            return result::Ok(method_node);
+        } break;
+        default:
+            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_struct_member: invalid token {}. Exected either identifier or 'proc'.", m_current_token.name));
+    }
+}
+
 // @brief Parse a variable definition. 
 // let x: i32 = 4 * 2;
 // let y: i32 = x;
@@ -421,9 +857,7 @@ ResultNode Parser::parse_let_statement() {
         )
     );
 
-    (void) eat(TK_SEMICOLON);
-
-    return result::Ok(new VariableDeclaration(
+    return result::Ok(new VariableDeclarationNode(
         id_tok.name,
         typespec_node,
         expr_node
@@ -574,6 +1008,11 @@ std::shared_ptr<AST> Parser::parse() {
             } break;
             case TK_LET: {
                 auto node = parse_let_statement().unwrap();
+                (void) eat(TK_SEMICOLON);
+                m_ast->add_node(node);
+            } break;
+            case TK_STRUCT: {
+                auto node = parse_struct().unwrap();
                 m_ast->add_node(node);
             } break;
             default:

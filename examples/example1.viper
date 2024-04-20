@@ -5,6 +5,11 @@
 struct Person {
     name :: std::string;
     age :: u32;
+
+    proc print(): i32 {
+        std::print(name);
+        return 0;
+    }
 }
 
 proc test_procedure(param1: i32, param2: f32): bool {

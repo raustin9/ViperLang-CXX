@@ -649,6 +649,7 @@ Tokenizer Tokenizer::create_new(VFile* file) {
     tok.keywords["void"] = TK_VOID;
     tok.keywords["for"] = TK_FOR;
     tok.keywords["while"] = TK_WHILE;
+    tok.keywords["do"] = TK_DO;
     tok.keywords["if"] = TK_IF;
     tok.keywords["elif"] = TK_ELIF;
     tok.keywords["else"] = TK_ELSE;

@@ -56,11 +56,20 @@ class Parser {
         ResultNode parse_expr_infix(ExpressionNode* lhs);
 
         ResultNode parse_statement();
+        ResultNode parse_expression_statement();
         ResultNode parse_let_statement();
+        ResultNode parse_return_statement();
+        ResultNode parse_if_statement();
+        ResultNode parse_elif_statement();
+        ResultNode parse_else_statement();
+        ResultNode parse_switch_statement();
+        ResultNode parse_while_statement();
+        ResultNode parse_for_statement();
+        ResultNode parse_do_while_statement();
         
         ResultNode parse_struct();
-        ResultNode parse_struct_body();
         ResultNode parse_struct_member();
+        ResultNode parse_struct_body();
 
         ResultNode parse_code_block();
         
