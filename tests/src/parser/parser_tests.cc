@@ -49,6 +49,7 @@ uint8_t parser_struct_basic() {
 }
 
 uint8_t parser_return_basic() {
+    std::printf("RETURN BASIC\n");
     bool result = true;
     
     viper::VFile* file = viper::VFile::create_new_ptr();
@@ -173,6 +174,7 @@ uint8_t parser_do_while_loop() {
 
 
 uint8_t parser_test_custom_typespec() {
+    std::printf("CUSTOM TYPESPEC\n");
     bool result = true;
     
     viper::VFile* file = viper::VFile::create_new_ptr();

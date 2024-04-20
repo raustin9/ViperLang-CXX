@@ -73,10 +73,14 @@ ResultNode Parser::parse_statement() {
     switch(m_current_token.kind) {
         case TK_LET: {
             // std::printf("Parsing let statement\n");
-            return parse_let_statement();
+            ResultNode node = parse_let_statement();
+            (void) eat(TK_SEMICOLON);
+            return node;
         } break;
         case TK_RETURN: {
-            return parse_return_statement();
+            ResultNode node = parse_return_statement();
+            (void) eat(TK_SEMICOLON);
+            return node;
         } break;
         case TK_IF: {
             return parse_if_statement();
@@ -85,13 +89,17 @@ ResultNode Parser::parse_statement() {
             return parse_while_statement();
         } break;
         case TK_DO: {
-            return parse_do_while_statement();
+            ResultNode node = parse_do_while_statement();
+            (void) eat(TK_SEMICOLON);
+            return node;
         } break;
         case TK_FOR: {
             return parse_for_statement();
         } break;
         default:
-            return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_statement: Unexpected token {}", token::kind_to_str(m_current_token.kind)));
+            ResultNode node = parse_expression_statement();
+            (void) eat(TK_SEMICOLON);
+            return node;
     }
 }
 
@@ -257,7 +265,6 @@ ResultNode Parser::parse_do_while_statement() {
         static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
     do_while_node->condition = condition;
 
-    (void) eat(TK_SEMICOLON);
     return result::Ok(do_while_node);
 }
 
@@ -426,7 +433,6 @@ ResultNode Parser::parse_return_statement() {
     }
     ExpressionNode* expr = static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
     return_node->expr = expr;
-    (void) eat(TK_SEMICOLON);
     return result::Ok(return_node);
 }
 
@@ -851,8 +857,6 @@ ResultNode Parser::parse_let_statement() {
         )
     );
 
-    (void) eat(TK_SEMICOLON);
-
     return result::Ok(new VariableDeclarationNode(
         id_tok.name,
         typespec_node,
@@ -1004,6 +1008,7 @@ std::shared_ptr<AST> Parser::parse() {
             } break;
             case TK_LET: {
                 auto node = parse_let_statement().unwrap();
+                (void) eat(TK_SEMICOLON);
                 m_ast->add_node(node);
             } break;
             case TK_STRUCT: {
