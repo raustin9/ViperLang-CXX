@@ -3,7 +3,6 @@
 #include "core/verror.h"
 #include "token.h"
 #include "tokenizer/tokenizer.h"
-#include <iterator>
 
 namespace viper {
 
@@ -82,6 +81,12 @@ ResultNode Parser::parse_statement() {
         case TK_IF: {
             return parse_if_statement();
         } break;
+        case TK_WHILE: {
+            return parse_while_statement();
+        } break;
+        case TK_DO: {
+            return parse_do_while_statement();
+        } break;
         default:
             return result::Err(VError::create_new(error_type::PARSER_ERR, "Parser::parse_statement: Unexpected token {}", token::kind_to_str(m_current_token.kind)));
     }
@@ -157,6 +162,83 @@ ResultNode Parser::parse_if_statement() {
     }
 
     return result::Ok(condition_node);
+}
+
+
+/// @brief Parse a while loop statement
+ResultNode Parser::parse_while_statement() {
+    WhileLoopStatementNode* while_loop_node = new WhileLoopStatementNode();
+    while_loop_node->tok = m_current_token;
+    (void) eat(TK_WHILE);
+
+    ResultNode r_condition = parse_expr();
+    if (r_condition.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(
+                error_type::PARSER_ERR,
+                "Parser::parse_if_statement: unable to parse condition expression"
+            )
+        );
+    }
+    ExpressionNode* condition = 
+        static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
+    while_loop_node->condition = condition;
+
+    // Parse the code body
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        while_loop_node->body.push_back(stmt);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+    return result::Ok(while_loop_node);
+}
+
+/// @brief Parse a do-while loop statement
+/// do {
+///     ...
+/// } while (condition);
+ResultNode Parser::parse_do_while_statement() {
+    DoWhileLoopStatementNode* do_while_node = new DoWhileLoopStatementNode();
+    (void) eat(TK_DO);
+
+    (void) eat(TK_LSQUIRLY);
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        do_while_node->body.push_back(stmt);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+    (void) eat(TK_DO);
+    
+    ResultNode r_condition = parse_expr();
+    if (r_condition.is_err()) {
+        error_msgs.push_back(
+            VError::create_new(
+                error_type::PARSER_ERR,
+                "Parser::parse_if_statement: unable to parse condition expression"
+            )
+        );
+    }
+    ExpressionNode* condition = 
+        static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
+    do_while_node->condition = condition;
+
+    (void) eat(TK_SEMICOLON);
+    return result::Ok(do_while_node);
 }
 
 

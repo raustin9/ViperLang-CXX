@@ -359,7 +359,7 @@ struct ConditionalStatementNode : public ASTNode {
 
     ASTNode* else_claus;        // else of elif statement
     
-    void print() {
+    void print() override {
         std::printf("%s ", tok.name.c_str());
         if (condition != nullptr) {
             condition->print();
@@ -373,6 +373,52 @@ struct ConditionalStatementNode : public ASTNode {
 
         if (else_claus != nullptr) {
             else_claus->print();
+        }
+        std::printf("\n");
+    }
+};
+
+/* Represents a while loop 
+ * while (condition) {
+ *  ...
+ *  }
+ */
+struct WhileLoopStatementNode : public ASTNode {
+    ExpressionNode* condition;
+    std::vector<ASTNode*> body;
+
+    void print() override {
+        std::printf("while ");
+        if (condition != nullptr) {
+            condition->print();
+        }
+        std::printf(" {\n");
+        for (const auto& stmt : body) {
+            std::printf("    ");
+            stmt->print();
+        }
+        std::printf("\n}\n");
+    }
+};
+
+/* Represents a while loop 
+ * while (condition) {
+ *  ...
+ *  }
+ */
+struct DoWhileLoopStatementNode : public ASTNode {
+    ExpressionNode* condition;
+    std::vector<ASTNode*> body;
+
+    void print() override {
+        std::printf("do {\n");
+        for (const auto& stmt : body) {
+            std::printf("    ");
+            stmt->print();
+        }
+        std::printf("\n} while ");
+        if (condition != nullptr) {
+            condition->print();
         }
         std::printf("\n");
     }

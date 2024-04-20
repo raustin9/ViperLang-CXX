@@ -61,6 +61,10 @@ class Parser {
         ResultNode parse_if_statement();
         ResultNode parse_elif_statement();
         ResultNode parse_else_statement();
+        ResultNode parse_switch_statement();
+        ResultNode parse_while_statement();
+        ResultNode parse_for_statement();
+        ResultNode parse_do_while_statement();
         
         ResultNode parse_struct();
         ResultNode parse_struct_member();
