@@ -12,6 +12,7 @@
 #include "defines.h"
 #include "token.h"
 #include "core/context.h"
+#include "core/result.h"
 
 #include <memory>
 
@@ -30,6 +31,8 @@ using prec_e = enum precedence {
     PREFIX,
     CALL,
 };
+
+using ResultNode = result::Result<ASTNode*, VError>;
 
 /* The kind of node in the AST */
 enum NodeKind {
@@ -97,11 +100,20 @@ struct ExpressionNode : public ASTNode {
  * x + 2;
  */
 struct ExpressionStatementNode : public ASTNode {
-    ExpressionNode* expr;
+    void set_expr(ExpressionNode* node) {
+        expr = node;
+    }
+
+    const ExpressionNode* get_expr() const {
+        return expr;
+    }
 
     void print() override {
         expr->print();
     }
+
+    private:
+    ExpressionNode* expr;
 };
 
 /* Represents an expression with a prefix operator
@@ -109,13 +121,35 @@ struct ExpressionStatementNode : public ASTNode {
  * ~x
  */
 struct ExpressionPrefixNode : public ExpressionNode {
-    token op;
-    ExpressionNode* rhs;
+    void set_rhs(ExpressionNode* node) {
+        rhs = node;
+    }
+    
+    void set_rhs(ResultNode& expr_node) {
+        rhs = 
+            static_cast<ExpressionNode*>(expr_node.unwrap_or(new ExpressionNode()));
+    }
+
+    const ExpressionNode* get_rhs() const {
+        return rhs;
+    }
+
+    void set_operator(const token& optr) {
+        op = optr;
+    }
+
+    const token& get_operator() const {
+        return op;
+    }
 
     void print() override {
         std::printf("%s", op.name.c_str());
         rhs->print();
     }
+
+    private:
+    token op;
+    ExpressionNode* rhs;
 };
 
 /* Represents an expression with an infix operator
@@ -123,10 +157,6 @@ struct ExpressionPrefixNode : public ExpressionNode {
  * y % 6
  */
 struct ExpressionBinaryNode : public ExpressionNode {
-    ExpressionNode* lhs;
-    token op;
-    ExpressionNode* rhs;
-
     void print() override {
         std::printf("[");
         lhs->print();
@@ -134,17 +164,63 @@ struct ExpressionBinaryNode : public ExpressionNode {
         rhs->print();
         std::printf("]");
     }
+    
+    // Set the RHS of the expression
+    void set_rhs(ExpressionNode* node) {
+        rhs = node;
+    }
+    void set_rhs(ResultNode& expr_node) {
+        rhs = 
+            static_cast<ExpressionNode*>(expr_node.unwrap_or(new ExpressionNode()));
+    }
+    const ExpressionNode* get_rhs() const {
+        return rhs;
+    }
+
+    // Set the operator
+    void set_operator(const token& optr) {
+        op = optr;
+    }
+    const token& get_operator() const {
+        return op;
+    }
+   
+    // Set the LHS of the expression
+    void set_lhs(ExpressionNode* node) {
+        lhs = node;
+    }
+    void set_lhs(ResultNode& expr_node) {
+        lhs = 
+            static_cast<ExpressionNode*>(expr_node.unwrap_or(new ExpressionNode()));
+    }
+    const ExpressionNode* get_lhs() const {
+        return lhs;
+    }
+
+
+    private:
+    ExpressionNode* lhs;
+    token op;
+    ExpressionNode* rhs;
 };
 
 /* Represents a string literal expression
  * "example"
  */
 struct ExpressionStringLiteralNode : public ExpressionNode {
-    token tok;
-
     void print() override {
         std::printf("\"%s\"", tok.name.c_str());
     }
+
+    void set_token(const token& t) {
+        tok = t;
+    }
+    const token& get_token() const {
+        return tok;
+    }
+
+    private:
+    token tok;
 };
 
 /* Represents a procedure call
@@ -152,8 +228,6 @@ struct ExpressionStringLiteralNode : public ExpressionNode {
  * bar(x + 1, num_seconds)
  */
 struct ExpressionProcedureCallNode : public ExpressionNode {
-    token identifier;
-    std::vector<ExpressionNode*> arguments;
     void print() override {
         std::printf("%s(", identifier.name.c_str());
         for (const auto& arg : arguments) {
@@ -162,6 +236,31 @@ struct ExpressionProcedureCallNode : public ExpressionNode {
         }
         std::printf(")");
     }
+
+    void set_identifier(const token& t) {
+        identifier = t;
+    }
+    const token& get_identifier() const {
+        return identifier;
+    }
+
+    void add_argument(ExpressionNode* arg) {
+        arguments.push_back(arg);
+    }
+
+    void add_argument(ResultNode r_arg) {
+        arguments.push_back(
+            static_cast<ExpressionNode*>(r_arg.unwrap_or(new ExpressionNode()))
+        );
+    }
+
+    const std::vector<ExpressionNode*>& get_arguments() const {
+        return arguments;
+    }
+
+    private:
+    token identifier;
+    std::vector<ExpressionNode*> arguments;
 };
 
 /* Represents an identifier reference
@@ -169,9 +268,6 @@ struct ExpressionProcedureCallNode : public ExpressionNode {
  * example_array[...]
  */
 struct ExpressionIdentifierNode : public ExpressionNode {
-    token identifier;
-    ExpressionNode* expr; // for dimensional access
-
     void print() override {
         std::printf("%s", identifier.name.c_str());
         if (expr != nullptr) {
@@ -180,6 +276,30 @@ struct ExpressionIdentifierNode : public ExpressionNode {
             std::printf("]");
         }
     }
+
+    void set_identifier(const token& t) {
+        identifier = t;
+    }
+    const token& get_identifier() const {
+        return identifier;
+    }
+
+    void set_expr(ExpressionNode* node) {
+        expr = node;
+    }
+    
+    void set_expr(ResultNode& expr_node) {
+        expr = 
+            static_cast<ExpressionNode*>(expr_node.unwrap_or(new ExpressionNode()));
+    }
+
+    const ExpressionNode* get_expr() const {
+        return expr;
+    }
+
+    private:
+    token identifier;
+    ExpressionNode* expr; // for dimensional access
 };
 
 
@@ -189,13 +309,34 @@ struct ExpressionIdentifierNode : public ExpressionNode {
  * test_struct.method();
  */
 struct ExpressionMemberAccessNode : public ExpressionNode {
-    token identifier;
-    ExpressionNode* access;
-
     void print() override {
         std::printf("%s.", identifier.name.c_str());
         access->print();
     }
+
+    void set_identifier(const token& t) {
+        identifier = t;
+    }
+    const token& get_identifier() const {
+        return identifier;
+    }
+
+    void set_access(ExpressionNode* node) {
+        access = node;
+    }
+    
+    void set_access(ResultNode& access_node) {
+        access = 
+            static_cast<ExpressionNode*>(access_node.unwrap_or(new ExpressionNode()));
+    }
+
+    const ExpressionNode* get_access() const {
+        return access;
+    }
+
+    private:
+    token identifier;
+    ExpressionNode* access;
 };
 
 
@@ -207,6 +348,15 @@ struct IntegerLiteralNode : public ExpressionNode {
         std::printf("%lu", this->value);
     }
 
+    void set_value(u64 val) {
+        value = val;
+    }
+
+    u64 get_value() const {
+        return value;
+    }
+
+    private:
     u64 value;
 };
 
@@ -222,6 +372,15 @@ struct BooleanLiteralNode : public ExpressionNode {
         }
     }
 
+    void set_is_true(bool is) {
+        is_true = is;
+    }
+
+    bool get_is_true() const {
+        return is_true;
+    }
+
+    private:
     bool is_true; // whether or not this evalueates to true or false
 };
 
@@ -233,6 +392,15 @@ struct FloatLiteralNode : public ExpressionNode {
         std::printf("%lf", value);
     }
 
+    void set_value(f64 val) {
+        value = val;
+    }
+
+    f64 get_value() const {
+        return value;
+    }
+
+    private:
     f64 value;
 };
 
@@ -320,27 +488,70 @@ struct VariableDeclarationNode : public ASTNode {
     ) : name(name), name_mangled(name), type_spec(type_spec), value(expr) {}
     ~VariableDeclarationNode() {}
 
-    std::string name;
-    std::string name_mangled;
-    ASTNode* type_spec;
-    ASTNode* value;
-
     void print() override {
         std::printf("let <%s>: <%s> = ", name.c_str(), type_spec->tok.name.c_str());
         this->value->print();
     }
+
+    void set_name(const std::string& str) {
+        name = str;
+    }
+    const std::string& get_name() const {
+        return name;
+    }
+
+    void set_name_mangled(const std::string& str) {
+        name_mangled = str;
+    }
+    const std::string& get_name_mangled() const {
+        return name_mangled;
+    }
+
+    void set_type_spec(ASTNode* ts) {
+        type_spec = ts;
+    }
+    const ASTNode* get_type_spec() const {
+        return type_spec;
+    }
+
+    void set_value(ASTNode* ts) {
+        value = ts;
+    }
+    const ASTNode* get_value() const {
+        return value;
+    }
+
+    private:
+    std::string name;
+    std::string name_mangled;
+    ASTNode* type_spec;
+    ASTNode* value;
 };
 
 /* Represents a return statement from a function
  * return x;
  */
 struct ReturnStatementNode : public ASTNode {
-    ExpressionNode* expr;
-
     void print() override {
         std::printf("return ");
         expr->print();
     }
+
+    void set_expr(ExpressionNode* node) {
+        expr = node;
+    }
+    
+    void set_expr(ResultNode& expr_node) {
+        expr = 
+            static_cast<ExpressionNode*>(expr_node.unwrap_or(new ExpressionNode()));
+    }
+
+    const ExpressionNode* get_expr() const {
+        return expr;
+    }
+
+    private:
+    ExpressionNode* expr;
 };
 
 /* Represents a conditional statement
@@ -353,12 +564,6 @@ struct ReturnStatementNode : public ASTNode {
  * }
  */
 struct ConditionalStatementNode : public ASTNode {
-    token tok;
-    ExpressionNode* condition;  // condition to evaluate 
-    std::vector<ASTNode*> body; // code body
-
-    ASTNode* else_claus;        // else of elif statement
-    
     void print() override {
         std::printf("%s ", tok.name.c_str());
         if (condition != nullptr) {
@@ -371,11 +576,55 @@ struct ConditionalStatementNode : public ASTNode {
         }
         std::printf("\n}");
 
-        if (else_claus != nullptr) {
-            else_claus->print();
+        if (else_clause != nullptr) {
+            else_clause->print();
         }
         std::printf("\n");
     }
+
+    // @brief Set whether it is an 'if' 'elif' or 'else' clause
+    void set_variant(const token& t) {
+        tok = t;
+    }
+    const token& get_variant() const {
+        return tok;
+    }
+    
+    void set_condition(ExpressionNode* node) {
+        condition = node;
+    }
+    
+    void set_condition(ResultNode& condition_node) {
+        condition = 
+            static_cast<ExpressionNode*>(condition_node.unwrap_or(new ExpressionNode()));
+    }
+
+    const ExpressionNode* get_condition() const {
+        return condition;
+    }
+
+    void add_stmt(ASTNode* stmt) {
+        body.push_back(stmt);
+    }
+    const std::vector<ASTNode*>& get_body() const {
+        return body;
+    }
+
+    void set_else_clause(ASTNode* clause) {
+        else_clause = clause;
+    }
+
+    const ASTNode* get_else_clause() const {
+        return else_clause;
+    }
+
+
+    private:
+    token tok;
+    ExpressionNode* condition;  // condition to evaluate 
+    std::vector<ASTNode*> body; // code body
+
+    ASTNode* else_clause;        // else of elif statement
 };
 
 /* Represents a while loop 
@@ -384,9 +633,6 @@ struct ConditionalStatementNode : public ASTNode {
  *  }
  */
 struct WhileLoopStatementNode : public ASTNode {
-    ExpressionNode* condition;
-    std::vector<ASTNode*> body;
-
     void print() override {
         std::printf("while ");
         if (condition != nullptr) {
@@ -400,6 +646,30 @@ struct WhileLoopStatementNode : public ASTNode {
         }
         std::printf("\n}\n");
     }
+
+    void set_condition(ExpressionNode* node) {
+        condition = node;
+    }
+    
+    void set_condition(ResultNode& condition_node) {
+        condition = 
+            static_cast<ExpressionNode*>(condition_node.unwrap_or(new ExpressionNode()));
+    }
+
+    const ExpressionNode* get_condition() const {
+        return condition;
+    }
+
+    void add_stmt(ASTNode* stmt) {
+        body.push_back(stmt);
+    }
+    const std::vector<ASTNode*>& get_body() const {
+        return body;
+    }
+
+    private:
+    ExpressionNode* condition;
+    std::vector<ASTNode*> body;
 };
 
 /* Represents a while loop 
@@ -408,8 +678,25 @@ struct WhileLoopStatementNode : public ASTNode {
  *  }
  */
 struct DoWhileLoopStatementNode : public ASTNode {
-    ExpressionNode* condition;
-    std::vector<ASTNode*> body;
+    void set_condition(ExpressionNode* node) {
+        condition = node;
+    }
+    
+    void set_condition(ResultNode& condition_node) {
+        condition = 
+            static_cast<ExpressionNode*>(condition_node.unwrap_or(new ExpressionNode()));
+    }
+
+    const ExpressionNode* get_condition() const {
+        return condition;
+    }
+
+    void add_stmt(ASTNode* stmt) {
+        body.push_back(stmt);
+    }
+    const std::vector<ASTNode*>& get_body() const {
+        return body;
+    }
 
     void print() override {
         std::printf("do {\n");
@@ -424,12 +711,53 @@ struct DoWhileLoopStatementNode : public ASTNode {
         }
         std::printf("\n");
     }
+
+    private:
+    ExpressionNode* condition;
+    std::vector<ASTNode*> body;
 };
 
 /* Represents a for loop
  * for (init; condition; action) {...}
  */
 struct ForLoopStatementNode : public ASTNode {
+    // Set the init action
+    void set_initialization(ASTNode* init) {
+        initialization = init;
+    }
+    const ASTNode* get_initialization() const {
+        return initialization;
+    }
+
+    // Condition to loop until
+    void set_condition(ExpressionNode* node) {
+        condition = node;
+    }
+    void set_condition(ResultNode& condition_node) {
+        condition = 
+            static_cast<ExpressionNode*>(condition_node.unwrap_or(new ExpressionNode()));
+    }
+    const ExpressionNode* get_condition() const {
+        return condition;
+    }
+
+    // Add line of code to the body
+    void add_stmt(ASTNode* stmt) {
+        body.push_back(stmt);
+    }
+    const std::vector<ASTNode*>& get_body() const {
+        return body;
+    }
+
+    // Set the action
+    void set_action(ASTNode* init) {
+        action = init;
+    }
+    const ASTNode* get_action() const {
+        return action;
+    }
+
+    private:
     ASTNode* initialization;
     ExpressionNode* condition;
     ASTNode* action;
@@ -460,9 +788,6 @@ struct ForLoopStatementNode : public ASTNode {
  * }
  */
 struct StructDefinitionNode : public ASTNode {
-    token identifier;
-    std::vector<ASTNode*> fields;
-
     void print() override {
         std::printf("struct %s {\n", identifier.name.c_str());
         for (const auto& field : fields) {
@@ -472,6 +797,24 @@ struct StructDefinitionNode : public ASTNode {
         }
         std::printf("}\n");
     }
+
+    void set_identifier(const token& t) {
+        identifier = t;
+    }
+    const token& get_identifier() const {
+        return identifier;
+    }
+
+    void add_field(ASTNode* field) {
+        fields.push_back(field);
+    }
+    const std::vector<ASTNode*>& get_fields() const {
+        return fields;
+    }
+
+    private:
+    token identifier;
+    std::vector<ASTNode*> fields;
 };
 
 /* Represents a field member within a struct definition
@@ -480,12 +823,27 @@ struct StructDefinitionNode : public ASTNode {
  * }
  */
 struct StructMemberFieldNode : public ASTNode {
-    token identifier;
-    ASTNode* type_spec;
+    void set_identifier(const token& t) {
+        identifier = t;
+    }
+    const token& get_identifier() const {
+        return identifier;
+    }
+
+    void set_type_spec(ASTNode* ts) {
+        type_spec = ts;
+    }
+    const ASTNode* get_type_spec() const {
+        return type_spec;
+    }
 
     void print() override {
         std::printf("%s :: %s", identifier.name.c_str(), type_spec->tok.name.c_str());
     }
+
+    private:
+    token identifier;
+    ASTNode* type_spec;
 };
 
 /* The structure for the 
