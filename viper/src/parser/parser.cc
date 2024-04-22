@@ -3,6 +3,7 @@
 #include "core/verror.h"
 #include "token.h"
 #include "tokenizer/tokenizer.h"
+#include <iostream>
 
 namespace viper {
 
@@ -104,6 +105,34 @@ ResultNode Parser::parse_statement() {
 }
 
 
+/// @brief Parse a code block statement
+/// {
+///      let i: i32 = foo();
+///      bar();
+///      ...
+/// }
+ResultNode Parser::parse_scope() {
+    CodeBlockStatementNode* scope = new CodeBlockStatementNode();
+    (void) eat(TK_LSQUIRLY);
+
+    // Parse all the statements
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            std::cout << "2" << std::endl;
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        scope->add_stmt(stmt);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+    return result::Ok(scope);
+}
+
+
 /// @brief Parse an if statement
 /// Represents a conditional statement
 /// if (condition) {
@@ -135,20 +164,27 @@ ResultNode Parser::parse_if_statement() {
     condition_node->set_condition(condition);
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        condition_node->add_stmt(stmt);
-        // condition_node->body.push_back(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
-
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    condition_node->set_body(body);
+//    (void) eat(TK_LSQUIRLY);
+//    while (m_current_token.kind != TK_RSQUIRLY) {
+//        auto stmt_res = parse_statement();
+//        if (stmt_res.is_err()) {
+//            error_msgs.push_back(stmt_res.unwrap_err());
+//        }
+//        ASTNode* stmt = stmt_res.unwrap_or(
+//            new ASTNode(NodeKind::AST_INVALID_NODE)
+//        );
+//        condition_node->add_stmt(stmt);
+//        // condition_node->body.push_back(stmt);
+//    }
+//
+//    (void) eat(TK_RSQUIRLY);
 
     switch (m_current_token.kind) {
         case TK_ELIF: { // elif clause
@@ -203,20 +239,27 @@ ResultNode Parser::parse_while_statement() {
     // while_loop_node->condition = condition;
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        while_loop_node->add_stmt(stmt);
-        // while_loop_node->body.push_back(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
-
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    while_loop_node->set_body(body);
+//    (void) eat(TK_LSQUIRLY);
+//    while (m_current_token.kind != TK_RSQUIRLY) {
+//        auto stmt_res = parse_statement();
+//        if (stmt_res.is_err()) {
+//            error_msgs.push_back(stmt_res.unwrap_err());
+//        }
+//        ASTNode* stmt = stmt_res.unwrap_or(
+//            new ASTNode(NodeKind::AST_INVALID_NODE)
+//        );
+//        while_loop_node->add_stmt(stmt);
+//        // while_loop_node->body.push_back(stmt);
+//    }
+//
+//    (void) eat(TK_RSQUIRLY);
     return result::Ok(while_loop_node);
 }
 
@@ -245,20 +288,15 @@ ResultNode Parser::parse_do_while_statement() {
     DoWhileLoopStatementNode* do_while_node = new DoWhileLoopStatementNode();
     (void) eat(TK_DO);
 
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        do_while_node->add_stmt(stmt);
-        // do_while_node->body.push_back(stmt);
+    // Parse code block body
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    do_while_node->set_body(body);
 
-    (void) eat(TK_RSQUIRLY);
     (void) eat(TK_WHILE);
     
     ResultNode r_condition = parse_expr();
@@ -313,23 +351,31 @@ ResultNode Parser::parse_for_statement() {
     (void) eat(TK_RPAREN);
 
     // Parse code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        for_node->add_stmt(stmt);
-        //for_node->body.push_back(stmt);
+//    (void) eat(TK_LSQUIRLY);
+//    while (m_current_token.kind != TK_RSQUIRLY) {
+//        auto stmt_res = parse_statement();
+//        if (stmt_res.is_err()) {
+//            error_msgs.push_back(stmt_res.unwrap_err());
+//        }
+//        ASTNode* stmt = stmt_res.unwrap_or(
+//            new ASTNode(NodeKind::AST_INVALID_NODE)
+//        );
+//        for_node->add_stmt(stmt);
+//        //for_node->body.push_back(stmt);
+//    }
+//    (void) eat(TK_RSQUIRLY);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        std::cout << "1" << std::endl;
+        error_msgs.push_back(r_body.unwrap_err());
     }
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
 
     for_node->set_initialization(init_node);
     for_node->set_condition(condition);
     for_node->set_action(action_node);
+    for_node->set_body(body);
     /*
     for_node->initialization = init_node;
     for_node->condition = condition;
@@ -362,20 +408,13 @@ ResultNode Parser::parse_elif_statement() {
     // elif_node->condition = condition;
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto r_stmt = parse_statement();
-        if (r_stmt.is_err()) {
-            error_msgs.push_back(r_stmt.unwrap_err());
-        }
-        ASTNode* stmt = r_stmt.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        elif_node->add_stmt(stmt);
-        // elif_node->body.push_back(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
-
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    elif_node->set_body(body);
 
     switch (m_current_token.kind) {
         case TK_ELIF: { // elif clause
@@ -421,20 +460,14 @@ ResultNode Parser::parse_else_statement() {
     // else_node->condition = nullptr;
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto r_stmt = parse_statement();
-        if (r_stmt.is_err()) {
-            error_msgs.push_back(r_stmt.unwrap_err());
-        }
-        ASTNode* stmt = r_stmt.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        else_node->add_stmt(stmt);
-        // else_node->body.push_back(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
-
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    else_node->set_body(body);
+    
     else_node->set_else_clause(nullptr);
     // else_node->else_claus = nullptr;
 
@@ -977,19 +1010,26 @@ ResultNode Parser::parse_procedure() {
     proc_node->set_return_type(return_type);
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        proc_node->add_statement(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
-    
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    proc_node->set_body(body);
+//    (void) eat(TK_LSQUIRLY);
+//    while (m_current_token.kind != TK_RSQUIRLY) {
+//        auto stmt_res = parse_statement();
+//        if (stmt_res.is_err()) {
+//            error_msgs.push_back(stmt_res.unwrap_err());
+//        }
+//        ASTNode* stmt = stmt_res.unwrap_or(
+//            new ASTNode(NodeKind::AST_INVALID_NODE)
+//        );
+//        proc_node->add_statement(stmt);
+//    }
+//    
+//    (void) eat(TK_RSQUIRLY);
     return result::Ok(proc_node);
 }
 

@@ -13,6 +13,10 @@ namespace viper {
 struct Symbol;
 struct ASTNode;
 
+/*
+ * Symbol table or "scope" that a symbol can be defined in
+ *
+ */
 class Scope {
 public:
     Scope(
@@ -31,7 +35,6 @@ private:
     std::string description;
     std::vector<Scope*> scopes;
     std::unordered_map<std::string, Symbol*> symbols;
-
 };
 
 }

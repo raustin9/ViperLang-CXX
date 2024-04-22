@@ -56,6 +56,7 @@ class Parser {
         ResultNode parse_expr_infix(ExpressionNode* lhs);
 
         ResultNode parse_statement();
+        ResultNode parse_scope();
         ResultNode parse_expression_statement();
         ResultNode parse_let_statement();
         ResultNode parse_return_statement();

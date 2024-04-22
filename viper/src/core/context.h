@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/core.h"
 #include "defines.h"
 
 #include <string>
@@ -12,16 +13,8 @@ struct Location {
 };
 
 struct Context {
-    std::string filename;
-    Location begin;
-    Location end;
-
-    Context() {}
-    Context(std::string filename, Location begin) {}
-
-    void start(Context* context);
-    void finish(Context* context, Context* wtspccontext = nullptr);
-    Context lastchar();
+    VFile* file;
+    VModule* module;
 };
 
 }

@@ -67,17 +67,22 @@ struct Type {
 
 /* Node in the AST */
 struct ASTNode {
-    ASTNode(NodeKind _kind) : kind(_kind) {}
+    ASTNode(NodeKind _kind) 
+        : kind(_kind) {}
     ASTNode() {}
     NodeKind kind;
     token tok;
     ASTNode* parent;
 
+    void set_parent(ASTNode* node) {
+        parent = node;
+    }
+
     static std::shared_ptr<ASTNode> create_new(token tok, NodeKind kind);
 
     Context& getContext() {return context;}
     void setContext(Context context) {}
-    virtual void print() {}
+    virtual void print(const std::string& prepend) {}
 
 private:
 
@@ -85,6 +90,36 @@ private:
     ASTNode* parent_node;
     std::string module;
     Scope* scope;
+};
+
+/* Represents a block of code consisting of 
+ * a series of statements
+ *
+ * {
+ *     let i: i32 = 0;
+ *     foo();
+ * }
+ */
+struct CodeBlockStatementNode : public ASTNode {
+    // Add line of code to the body
+    void add_stmt(ASTNode* stmt) {
+        body.push_back(stmt);
+    }
+    const std::vector<ASTNode*>& get_body() const {
+        return body;
+    }
+
+    void print(const std::string& prepend) {
+        std::printf("%s{\n", prepend.c_str());
+        for (const auto& stmt : body) {
+            stmt->print("    " + prepend);
+            std::printf("\n");
+        }
+        std::printf("%s}", prepend.c_str());
+    }
+
+    private:
+    std::vector<ASTNode*> body;
 };
 
 //////////////////////////////////////
@@ -108,8 +143,8 @@ struct ExpressionStatementNode : public ASTNode {
         return expr;
     }
 
-    void print() override {
-        expr->print();
+    void print(const std::string& prepend) override {
+        expr->print("    ");
     }
 
     private:
@@ -142,9 +177,9 @@ struct ExpressionPrefixNode : public ExpressionNode {
         return op;
     }
 
-    void print() override {
+    void print(const std::string& prepend) override {
         std::printf("%s", op.name.c_str());
-        rhs->print();
+        rhs->print("    ");
     }
 
     private:
@@ -157,11 +192,11 @@ struct ExpressionPrefixNode : public ExpressionNode {
  * y % 6
  */
 struct ExpressionBinaryNode : public ExpressionNode {
-    void print() override {
+    void print(const std::string& prepend) override {
         std::printf("[");
-        lhs->print();
+        lhs->print("    ");
         std::printf(" %s ", op.name.c_str());
-        rhs->print();
+        rhs->print("    ");
         std::printf("]");
     }
     
@@ -208,7 +243,7 @@ struct ExpressionBinaryNode : public ExpressionNode {
  * "example"
  */
 struct ExpressionStringLiteralNode : public ExpressionNode {
-    void print() override {
+    void print(const std::string& prepend) override {
         std::printf("\"%s\"", tok.name.c_str());
     }
 
@@ -228,10 +263,10 @@ struct ExpressionStringLiteralNode : public ExpressionNode {
  * bar(x + 1, num_seconds)
  */
 struct ExpressionProcedureCallNode : public ExpressionNode {
-    void print() override {
+    void print(const std::string& prepend) override {
         std::printf("%s(", identifier.name.c_str());
         for (const auto& arg : arguments) {
-            arg->print();
+            arg->print("    ");
             std::printf(", ");
         }
         std::printf(")");
@@ -268,11 +303,11 @@ struct ExpressionProcedureCallNode : public ExpressionNode {
  * example_array[...]
  */
 struct ExpressionIdentifierNode : public ExpressionNode {
-    void print() override {
+    void print(const std::string& prepend) override {
         std::printf("%s", identifier.name.c_str());
         if (expr != nullptr) {
             std::printf("[");
-            expr->print();
+            expr->print("    ");
             std::printf("]");
         }
     }
@@ -309,9 +344,9 @@ struct ExpressionIdentifierNode : public ExpressionNode {
  * test_struct.method();
  */
 struct ExpressionMemberAccessNode : public ExpressionNode {
-    void print() override {
+    void print(const std::string& prepend) override {
         std::printf("%s.", identifier.name.c_str());
-        access->print();
+        access->print("    ");
     }
 
     void set_identifier(const token& t) {
@@ -344,7 +379,7 @@ struct ExpressionMemberAccessNode : public ExpressionNode {
 struct IntegerLiteralNode : public ExpressionNode {
     IntegerLiteralNode(u64 value) : value(value) {}
 
-    void print() override {
+    void print(const std::string& prepend) override {
         std::printf("%lu", this->value);
     }
 
@@ -364,7 +399,7 @@ struct IntegerLiteralNode : public ExpressionNode {
 struct BooleanLiteralNode : public ExpressionNode {
     BooleanLiteralNode(bool is_true) : is_true(is_true) {}
 
-    void print() override {
+    void print(const std::string& prepend) override {
         if (is_true) {
             std::printf("true");
         } else {
@@ -388,7 +423,7 @@ struct BooleanLiteralNode : public ExpressionNode {
 struct FloatLiteralNode : public ExpressionNode {
     FloatLiteralNode(f64 value) : value(value) {}
 
-    void print() override {
+    void print(const std::string& prepend) override {
         std::printf("%lf", value);
     }
 
@@ -422,24 +457,20 @@ struct ProcedureNode : public ASTNode {
     void add_parameter(ASTNode* param);
 
     void add_statement(ASTNode* stmt);
+    void set_body(CodeBlockStatementNode* b) {
+        body = b;
+    }
 
-    void print() override {
+    void print(const std::string& prepend) override {
         // Print function prototype
-        std::printf("proc <%s>: <%s> (", name.c_str(), return_declarator->tok.name.c_str());
+        std::printf("%sproc <%s>: <%s> (", prepend.c_str(), name.c_str(), return_declarator->tok.name.c_str());
         for (const auto& param : this->parameters) {
-            param->print();
+            param->print("");
             std::printf(", ");
         }
-        std::printf(") {\n");
+        std::printf(")\n");
 
-        /// Print the code body
-        for (const auto& stmt : code_body) {
-            std::printf("    ");
-            stmt->print();
-            std::printf("\n");
-        }
-
-        std::printf("}\n");
+        body->print(prepend);
     }
 
     private:
@@ -450,7 +481,8 @@ struct ProcedureNode : public ASTNode {
     ASTNode* return_declarator;       
     ASTNode* procedure_declarator;    
     Scope* scope;
-    std::vector<ASTNode*> code_body;  // code block body of the procedure
+    CodeBlockStatementNode* body;
+    // std::vector<ASTNode*> code_body;  // code block body of the procedure
 };
 
 struct ProcParameter : public ASTNode {
@@ -468,8 +500,8 @@ struct ProcParameter : public ASTNode {
         return data_type;
     }
 
-    void print() override {
-        std::printf("<%s>: <%s>", this->name.c_str(), data_type.name.c_str());
+    void print(const std::string& prepend) override {
+        std::printf("%s<%s>: <%s>", prepend.c_str(), this->name.c_str(), data_type.name.c_str());
     }
 
     private:
@@ -488,9 +520,9 @@ struct VariableDeclarationNode : public ASTNode {
     ) : name(name), name_mangled(name), type_spec(type_spec), value(expr) {}
     ~VariableDeclarationNode() {}
 
-    void print() override {
-        std::printf("let <%s>: <%s> = ", name.c_str(), type_spec->tok.name.c_str());
-        this->value->print();
+    void print(const std::string& prepend) override {
+        std::printf("%slet <%s>: <%s> = ", prepend.c_str(), name.c_str(), type_spec->tok.name.c_str());
+        this->value->print("    ");
     }
 
     void set_name(const std::string& str) {
@@ -532,9 +564,10 @@ struct VariableDeclarationNode : public ASTNode {
  * return x;
  */
 struct ReturnStatementNode : public ASTNode {
-    void print() override {
-        std::printf("return ");
-        expr->print();
+    void print(const std::string& prepend) override {
+        std::printf("%sreturn ", prepend.c_str());
+        expr->print("");
+        std::printf("\n");
     }
 
     void set_expr(ExpressionNode* node) {
@@ -564,20 +597,16 @@ struct ReturnStatementNode : public ASTNode {
  * }
  */
 struct ConditionalStatementNode : public ASTNode {
-    void print() override {
-        std::printf("%s ", tok.name.c_str());
+    void print(const std::string& prepend) override {
+        std::printf("%s%s ", prepend.c_str(), tok.name.c_str());
         if (condition != nullptr) {
-            condition->print();
+            condition->print("");
         }
-        std::printf(" {\n");
-        for (const auto& stmt : body) {
-            std::printf("    ");
-            stmt->print();
-        }
-        std::printf("\n}");
+
+        body->print(prepend);
 
         if (else_clause != nullptr) {
-            else_clause->print();
+            else_clause->print(prepend);
         }
         std::printf("\n");
     }
@@ -603,10 +632,16 @@ struct ConditionalStatementNode : public ASTNode {
         return condition;
     }
 
-    void add_stmt(ASTNode* stmt) {
-        body.push_back(stmt);
+//    void add_stmt(ASTNode* stmt) {
+//        body.push_back(stmt);
+//    }
+//    const std::vector<ASTNode*>& get_body() const {
+//        return body;
+//    }
+    void set_body(CodeBlockStatementNode* b) {
+        body = b;
     }
-    const std::vector<ASTNode*>& get_body() const {
+    CodeBlockStatementNode* get_body() const {
         return body;
     }
 
@@ -622,8 +657,8 @@ struct ConditionalStatementNode : public ASTNode {
     private:
     token tok;
     ExpressionNode* condition;  // condition to evaluate 
-    std::vector<ASTNode*> body; // code body
-
+    // std::vector<ASTNode*> body; // code body
+    CodeBlockStatementNode* body;
     ASTNode* else_clause;        // else of elif statement
 };
 
@@ -633,18 +668,12 @@ struct ConditionalStatementNode : public ASTNode {
  *  }
  */
 struct WhileLoopStatementNode : public ASTNode {
-    void print() override {
-        std::printf("while ");
+    void print(const std::string& prepend) override {
+        std::printf("%swhile ", prepend.c_str());
         if (condition != nullptr) {
-            condition->print();
+            condition->print("");
         }
-        std::printf(" {\n");
-        for (const auto& stmt : body) {
-            std::printf("    ");
-            stmt->print();
-            std::printf("\n");
-        }
-        std::printf("\n}\n");
+        body->print(prepend);
     }
 
     void set_condition(ExpressionNode* node) {
@@ -660,16 +689,17 @@ struct WhileLoopStatementNode : public ASTNode {
         return condition;
     }
 
-    void add_stmt(ASTNode* stmt) {
-        body.push_back(stmt);
+    void set_body(CodeBlockStatementNode* b) {
+        body = b;
     }
-    const std::vector<ASTNode*>& get_body() const {
+    CodeBlockStatementNode* get_body() const {
         return body;
     }
 
     private:
     ExpressionNode* condition;
-    std::vector<ASTNode*> body;
+    CodeBlockStatementNode* body;
+    // std::vector<ASTNode*> body;
 };
 
 /* Represents a while loop 
@@ -691,30 +721,26 @@ struct DoWhileLoopStatementNode : public ASTNode {
         return condition;
     }
 
-    void add_stmt(ASTNode* stmt) {
-        body.push_back(stmt);
+    void set_body(CodeBlockStatementNode* b) {
+        body = b;
     }
-    const std::vector<ASTNode*>& get_body() const {
+    CodeBlockStatementNode* get_body() const {
         return body;
     }
 
-    void print() override {
-        std::printf("do {\n");
-        for (const auto& stmt : body) {
-            std::printf("    ");
-            stmt->print();
-            std::printf("\n");
-        }
-        std::printf("\n} while ");
+    void print(const std::string& prepend) override {
+        std::printf("%sdo ", prepend.c_str());
+        body->print(prepend);
+        std::printf("%swhile ", prepend.c_str());
         if (condition != nullptr) {
-            condition->print();
+            condition->print("");
         }
         std::printf("\n");
     }
 
     private:
     ExpressionNode* condition;
-    std::vector<ASTNode*> body;
+    CodeBlockStatementNode* body;
 };
 
 /* Represents a for loop
@@ -741,11 +767,16 @@ struct ForLoopStatementNode : public ASTNode {
         return condition;
     }
 
+    void set_body(CodeBlockStatementNode* b) {
+        body = b;
+    }
+
     // Add line of code to the body
     void add_stmt(ASTNode* stmt) {
-        body.push_back(stmt);
+        body->add_stmt(stmt);
+        // body.push_back(stmt);
     }
-    const std::vector<ASTNode*>& get_body() const {
+    CodeBlockStatementNode* get_body() const {
         return body;
     }
 
@@ -758,27 +789,24 @@ struct ForLoopStatementNode : public ASTNode {
     }
 
     private:
-    ASTNode* initialization;
-    ExpressionNode* condition;
-    ASTNode* action;
+    ASTNode* initialization;    // happens once when loop begins
+    ExpressionNode* condition;  // determines when loop breaks when this is false
+    ASTNode* action;            // happens at the end of every loop 
 
-    std::vector<ASTNode*> body;
 
-    void print() override {
-        std::printf("for (");
-        initialization->print();
+    CodeBlockStatementNode* body; // the block of code that executes in the loop
+    // std::vector<ASTNode*> body; // the body of code that executes in the loop
+
+    void print(const std::string& prepend) override {
+        std::printf("%sfor (", prepend.c_str());
+        initialization->print("");
         std::printf("; ");
-        condition->print();
+        condition->print("");
         std::printf("; ");
-        action->print();
-        std::printf(") {\n");
-        
-        for (const auto& stmt : body) {
-            std::printf("    ");
-            stmt->print();
-            std::printf("\n");
-        }
-        std::printf("}\n");
+        action->print("");
+        std::printf("(\n");
+
+        body->print("    " + prepend);
     }
 };
 
@@ -788,11 +816,10 @@ struct ForLoopStatementNode : public ASTNode {
  * }
  */
 struct StructDefinitionNode : public ASTNode {
-    void print() override {
-        std::printf("struct %s {\n", identifier.name.c_str());
+    void print(const std::string& prepend) override {
+        std::printf("%sstruct %s {\n", prepend.c_str(), identifier.name.c_str());
         for (const auto& field : fields) {
-            std::printf("    ");
-            field->print();
+            field->print(prepend + "    ");
             std::printf("\n");
         }
         std::printf("}\n");
@@ -837,8 +864,8 @@ struct StructMemberFieldNode : public ASTNode {
         return type_spec;
     }
 
-    void print() override {
-        std::printf("%s :: %s", identifier.name.c_str(), type_spec->tok.name.c_str());
+    void print(const std::string& prepend) override {
+        std::printf("%s%s :: %s", prepend.c_str(), identifier.name.c_str(), type_spec->tok.name.c_str());
     }
 
     private:
@@ -858,7 +885,7 @@ struct AST {
 
     void print_tree() {
         for (const auto& node : nodes) {
-            node->print();
+            node->print("");
             std::printf("\n");
         }
     }

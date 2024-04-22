@@ -30,6 +30,7 @@ class VModule {
         void add_file(VFile* file);
 
         std::vector<VFile*> m_files;
+
 };
 
 
