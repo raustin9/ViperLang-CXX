@@ -18,4 +18,12 @@ Scope::~Scope() {
 
 }
 
+
+/// @brief Add a symbol to the symbol table
+/// @returns False if the symbol collides
+///          True otherwise
+bool Scope::add_symbol(Symbol* sym) {
+    return false;
+}
+
 }

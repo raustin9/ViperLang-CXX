@@ -26,7 +26,7 @@ public:
     );
     ~Scope();
 
-    void add_symbol(Symbol* symbol, Context* context);
+    bool add_symbol(Symbol* symbol);
     std::optional<Symbol*> get_symbol(ASTNode* node);
 private:
     Scope* parent;
