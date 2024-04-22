@@ -171,20 +171,6 @@ ResultNode Parser::parse_if_statement() {
     CodeBlockStatementNode* body = 
         static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
     condition_node->set_body(body);
-//    (void) eat(TK_LSQUIRLY);
-//    while (m_current_token.kind != TK_RSQUIRLY) {
-//        auto stmt_res = parse_statement();
-//        if (stmt_res.is_err()) {
-//            error_msgs.push_back(stmt_res.unwrap_err());
-//        }
-//        ASTNode* stmt = stmt_res.unwrap_or(
-//            new ASTNode(NodeKind::AST_INVALID_NODE)
-//        );
-//        condition_node->add_stmt(stmt);
-//        // condition_node->body.push_back(stmt);
-//    }
-//
-//    (void) eat(TK_RSQUIRLY);
 
     switch (m_current_token.kind) {
         case TK_ELIF: { // elif clause
@@ -246,20 +232,7 @@ ResultNode Parser::parse_while_statement() {
     CodeBlockStatementNode* body = 
         static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
     while_loop_node->set_body(body);
-//    (void) eat(TK_LSQUIRLY);
-//    while (m_current_token.kind != TK_RSQUIRLY) {
-//        auto stmt_res = parse_statement();
-//        if (stmt_res.is_err()) {
-//            error_msgs.push_back(stmt_res.unwrap_err());
-//        }
-//        ASTNode* stmt = stmt_res.unwrap_or(
-//            new ASTNode(NodeKind::AST_INVALID_NODE)
-//        );
-//        while_loop_node->add_stmt(stmt);
-//        // while_loop_node->body.push_back(stmt);
-//    }
-//
-//    (void) eat(TK_RSQUIRLY);
+    
     return result::Ok(while_loop_node);
 }
 
@@ -276,7 +249,6 @@ ResultNode Parser::parse_expression_statement() {
         static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
 
     expr_stmt->set_expr(expr);
-    // expr_stmt->expr = expr;
     return result::Ok(expr_stmt);
 }
 
@@ -311,7 +283,6 @@ ResultNode Parser::parse_do_while_statement() {
     ExpressionNode* condition = 
         static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
     do_while_node->set_condition(condition);
-    // do_while_node->condition = condition;
 
     return result::Ok(do_while_node);
 }
@@ -331,7 +302,6 @@ ResultNode Parser::parse_for_statement() {
         error_msgs.push_back(r_init_node.unwrap_err());
     }
     ASTNode* init_node = r_init_node.unwrap_or(new ASTNode());
-    // (void) eat(TK_SEMICOLON);
 
     // Parse the condition
     ResultNode r_condition = parse_expr();
@@ -351,19 +321,6 @@ ResultNode Parser::parse_for_statement() {
     (void) eat(TK_RPAREN);
 
     // Parse code body
-//    (void) eat(TK_LSQUIRLY);
-//    while (m_current_token.kind != TK_RSQUIRLY) {
-//        auto stmt_res = parse_statement();
-//        if (stmt_res.is_err()) {
-//            error_msgs.push_back(stmt_res.unwrap_err());
-//        }
-//        ASTNode* stmt = stmt_res.unwrap_or(
-//            new ASTNode(NodeKind::AST_INVALID_NODE)
-//        );
-//        for_node->add_stmt(stmt);
-//        //for_node->body.push_back(stmt);
-//    }
-//    (void) eat(TK_RSQUIRLY);
     ResultNode r_body = parse_scope();
     if (r_body.is_err()) {
         std::cout << "1" << std::endl;
@@ -376,11 +333,6 @@ ResultNode Parser::parse_for_statement() {
     for_node->set_condition(condition);
     for_node->set_action(action_node);
     for_node->set_body(body);
-    /*
-    for_node->initialization = init_node;
-    for_node->condition = condition;
-    for_node->action = action_node;
-    */
 
     return result::Ok(for_node);
 }
@@ -390,7 +342,6 @@ ResultNode Parser::parse_for_statement() {
 ResultNode Parser::parse_elif_statement() {
     ConditionalStatementNode* elif_node = new ConditionalStatementNode();
     elif_node->set_variant(m_current_token);
-    // elif_node->tok = m_current_token;
     (void) eat(TK_ELIF);
 
     ResultNode r_condition = parse_expr();
@@ -405,7 +356,6 @@ ResultNode Parser::parse_elif_statement() {
     ExpressionNode* condition = 
         static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
     elif_node->set_condition(condition);
-    // elif_node->condition = condition;
 
     // Parse the code body
     ResultNode r_body = parse_scope();
@@ -426,7 +376,6 @@ ResultNode Parser::parse_elif_statement() {
                 static_cast<ConditionalStatementNode*>(r_elif_node.unwrap_or(new ConditionalStatementNode()));
 
             elif_node->set_else_clause(node);
-            // elif_node->else_claus = node;
         } break;
         case TK_ELSE: { // else clause
             ResultNode r_elif_node = parse_else_statement();
@@ -437,11 +386,9 @@ ResultNode Parser::parse_elif_statement() {
                 static_cast<ConditionalStatementNode*>(r_elif_node.unwrap_or(new ConditionalStatementNode()));
 
             elif_node->set_else_clause(node);
-            // elif_node->else_claus = node;
         } break;
         default:
             elif_node->set_else_clause(nullptr);
-            // elif_node->else_claus = nullptr;
             break;
     }
     return result::Ok(elif_node);
@@ -469,9 +416,8 @@ ResultNode Parser::parse_else_statement() {
     else_node->set_body(body);
     
     else_node->set_else_clause(nullptr);
-    // else_node->else_claus = nullptr;
 
-    // Else marks the end of the conditional chain
+    // Else marks the end of the conditional chain -- no further parsing
 
     return result::Ok(else_node);
 }
@@ -638,21 +584,15 @@ ResultNode Parser::parse_expr_identifier() {
         ExpressionMemberAccessNode* member_expr = new ExpressionMemberAccessNode();
         member_expr->set_identifier(identifier);
         member_expr->set_access(access_expr);
-//        member_expr->identifier = identifier;
-//        member_expr->access = access_expr;
 
         return result::Ok(member_expr);
     }
 
-    // TODO: . operator for member access
-    // TODO: [] operator for dimension access
-
     // If not procedure call, then normal variable reference
     ExpressionIdentifierNode* ident_expr = new ExpressionIdentifierNode();
-    // ident_expr->identifier = identifier;
     ident_expr->set_identifier(identifier);
     ident_expr->set_expr(nullptr);
-    // ident_expr->expr = nullptr;
+    
     return result::Ok(ident_expr);
 }
 
@@ -759,9 +699,6 @@ ResultNode Parser::parse_expr_binary(ExpressionNode* lhs, prec_e min_prec) {
     }
 
     ExpressionBinaryNode* expr = new ExpressionBinaryNode();
-//    expr->lhs = lhs;
-//    expr->op = op;
-//    expr->rhs = rhs;
     expr->set_lhs(lhs);
     expr->set_operator(op);
     expr->set_rhs(rhs);
@@ -797,7 +734,6 @@ ResultNode Parser::parse_struct() {
     (void) eat(TK_STRUCT);
     token identifier = m_current_token;
     struct_node->set_identifier(identifier);
-    // struct_node->identifier = identifier;
     (void) eat(TK_IDENT);
 
     // Read the definition body
@@ -814,7 +750,6 @@ ResultNode Parser::parse_struct() {
         }
         ASTNode* field = r_field.unwrap_or(new ASTNode());
         struct_node->add_field(field);
-        // struct_node->fields.push_back(field);
     }
 
     (void) eat(TK_RSQUIRLY);
@@ -831,7 +766,6 @@ ResultNode Parser::parse_struct_member() {
                 token identifier = m_current_token;
                 (void) eat(TK_IDENT);
                 field_node->set_identifier(identifier);
-                // field_node->identifier = identifier;
                 
                 (void) eat(TK_DOUBLECOLON);
                 
@@ -941,18 +875,6 @@ ResultNode Parser::parse_let_statement() {
 }
 
 
-/// @brief Parse a block of code
-ResultNode Parser::parse_code_block() {    
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-
-    }
-
-    (void) eat(TK_RSQUIRLY);
-    return result::Err(VError::create_new(error_type::PARSER_ERR, "parse_code_block not implemented yet!"));
-}
-
 /// @brief Parse a procedure (function)
 /// Return the AST node created from it
 ///
@@ -1017,19 +939,7 @@ ResultNode Parser::parse_procedure() {
     CodeBlockStatementNode* body = 
         static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
     proc_node->set_body(body);
-//    (void) eat(TK_LSQUIRLY);
-//    while (m_current_token.kind != TK_RSQUIRLY) {
-//        auto stmt_res = parse_statement();
-//        if (stmt_res.is_err()) {
-//            error_msgs.push_back(stmt_res.unwrap_err());
-//        }
-//        ASTNode* stmt = stmt_res.unwrap_or(
-//            new ASTNode(NodeKind::AST_INVALID_NODE)
-//        );
-//        proc_node->add_statement(stmt);
-//    }
-//    
-//    (void) eat(TK_RSQUIRLY);
+    
     return result::Ok(proc_node);
 }
 
