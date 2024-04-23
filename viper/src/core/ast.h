@@ -32,50 +32,23 @@ using prec_e = enum precedence {
     CALL,
 };
 
-using ResultNode = result::Result<ASTNode*, VError>;
-
-/* The kind of node in the AST */
 enum NodeKind {
     AST_NOOP,
     AST_INVALID_NODE
 };
 
-/* The data type of node in AST */
-struct Type {
-    enum TypeKind {
-        BOOL,
-        BYTE,
-        I8,
-        I16,
-        I32,
-        I64,
-        U8,
-        U16,
-        U32,
-        U64,
-        F32,
-        F64,
-        ENUM,
-        POINTER,
-        PROCEDURE,
-        ARRAY,
-        STRUCTURE,
-        UNION,
-    };
-
-};
+using ResultNode = result::Result<ASTNode*, VError>;
 
 /* Node in the AST */
 struct ASTNode {
-    ASTNode(NodeKind _kind) 
-        : kind(_kind) {}
+    ASTNode(NodeKind kind) : kind(kind) {}
     ASTNode() {}
+   
     NodeKind kind;
     token tok;
-    ASTNode* parent;
 
     void set_parent(ASTNode* node) {
-        parent = node;
+        parent_node = node;
     }
 
     static std::shared_ptr<ASTNode> create_new(token tok, NodeKind kind);
@@ -83,8 +56,10 @@ struct ASTNode {
     Context& getContext() {return context;}
     void setContext(Context context) {}
     virtual void print(const std::string& prepend) {}
+    virtual void add_symbols(Scope* scope) {}
+    virtual void set_scope(Scope* scope) {}
 
-private:
+protected:
 
     Context context;
     ASTNode* parent_node;
@@ -109,13 +84,19 @@ struct CodeBlockStatementNode : public ASTNode {
         return body;
     }
 
-    void print(const std::string& prepend) {
+    void print(const std::string& prepend) override {
         std::printf("%s{\n", prepend.c_str());
         for (const auto& stmt : body) {
             stmt->print("    " + prepend);
             std::printf("\n");
         }
         std::printf("%s}", prepend.c_str());
+    }
+
+    virtual void add_symbols(Scope* scope) override {
+        for (const auto& stmt : body) {
+            stmt->add_symbols(this->scope);
+        }
     }
 
     private:
@@ -806,7 +787,7 @@ struct ForLoopStatementNode : public ASTNode {
         action->print("");
         std::printf("(\n");
 
-        body->print("    " + prepend);
+        body->print(prepend);
     }
 };
 

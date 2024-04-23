@@ -1,4 +1,6 @@
 #include "core.h"
+#include "tokenizer/tokenizer.h"
+#include "parser/parser.h"
 
 #include <cstdlib>
 #include <fstream>
@@ -31,6 +33,19 @@ VFile VFile::from(const std::string& file_path) {
     handle.read(file.content.data(), file_length);
 
     return file;
+}
+
+
+/// @brief Parse the content of the file
+void VFile::parse() {
+    Tokenizer lexer = Tokenizer::create_new(this);
+    Parser parser = Parser::create_new(&lexer);
+
+    ast = parser.parse();
+}
+
+void VFile::print_ast() {
+    ast->print_tree();
 }
 
 

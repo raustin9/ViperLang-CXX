@@ -993,29 +993,64 @@ ResultNode Parser::parse_proc_parameter() {
 /// @returns the Abstract Syntax tree
 std::shared_ptr<AST> Parser::parse() {
     /* Parse at the top level  of file */
-    while (m_current_token.kind != TK_EOF) {
-        switch (m_current_token.kind) {
-            case TK_PROC: {
-                auto node = parse_procedure().unwrap();
-                m_ast->add_node(node);
-            } break;
-            case TK_LET: {
-                auto node = parse_let_statement().unwrap();
-                (void) eat(TK_SEMICOLON);
-                m_ast->add_node(node);
-            } break;
-            case TK_STRUCT: {
-                auto node = parse_struct().unwrap();
-                m_ast->add_node(node);
-            } break;
-            default:
-                break;
-        }
-        // std::printf("TOKEN: %s\n", token::kind_to_str(m_current_token.kind).c_str());
+//    while (m_current_token.kind != TK_EOF) {
+//        switch (m_current_token.kind) {
+//            case TK_PROC: {
+//                auto node = parse_procedure().unwrap();
+//                m_ast->add_node(node);
+//            } break;
+//            case TK_LET: {
+//                auto node = parse_let_statement().unwrap();
+//                (void) eat(TK_SEMICOLON);
+//                m_ast->add_node(node);
+//            } break;
+//            case TK_STRUCT: {
+//                auto node = parse_struct().unwrap();
+//                m_ast->add_node(node);
+//            } break;
+//            default:
+//                std::printf("DEFAULT TOKEN: %s\n", token::kind_to_str(m_current_token.kind).c_str());
+//                break;
+//        }
+//    }
+    auto node = parse_top_level_statement();
+    while (node.has_value()
+           && node.value()->kind != AST_INVALID_NODE
+    ) {
+        node = parse_top_level_statement();
+    }
+    
+    return m_ast;
+}
+
+std::optional<ASTNode*> Parser::parse_top_level_statement() {
+    if (m_current_token.kind == TK_EOF) {
+        return std::nullopt;
     }
 
 
-    return m_ast;
+    switch (m_current_token.kind) {
+        case TK_PROC: {
+            auto node = parse_procedure().unwrap();
+            m_ast->add_node(node);
+            return node;
+        } break;
+        case TK_LET: {
+            auto node = parse_let_statement().unwrap();
+            (void) eat(TK_SEMICOLON);
+            m_ast->add_node(node);
+            return node;
+        } break;
+        case TK_STRUCT: {
+            auto node = parse_struct().unwrap();
+            m_ast->add_node(node);
+            return node;
+        } break;
+        default: {
+            ASTNode* node = new ASTNode(AST_INVALID_NODE);
+            return node;
+        } break;
+    }
 }
 
 

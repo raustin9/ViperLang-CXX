@@ -26,6 +26,7 @@ class Parser {
         ~Parser() {}
         static Parser create_new(Tokenizer* lexer);
         std::shared_ptr<AST> parse();
+        std::optional<ASTNode*> parse_top_level_statement();
 
     private:
         using ResultNode = result::Result<ASTNode*, VError>;

@@ -28,7 +28,8 @@ ProcedureNode::~ProcedureNode() {
 
 /// @brief Add a statement to the body of the procedure
 void ProcedureNode::add_statement(ASTNode* stmt) {
-    stmt->parent = this;
+    stmt->set_parent(stmt);
+    // stmt->parent_node = this;
     // code_body.push_back(stmt);
 }
 

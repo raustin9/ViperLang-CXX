@@ -7,6 +7,7 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
+#include <optional>
 
 namespace viper {
 
@@ -21,8 +22,7 @@ class Scope {
 public:
     Scope(
         Scope* parent,
-        bool is_module_scope = false,
-        std::string module = ""
+        bool is_module_scope = false
     );
     ~Scope();
 
