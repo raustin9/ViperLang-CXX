@@ -48,11 +48,11 @@ struct IntType : public Type {
     Sign sign;
     u64 width;
 
-    static const Type* get(Sign sign, u64 width) {
-        IntType itype = IntType();
-        itype.sign = sign;
-        itype.width = width;
-    }
+//    static const Type* get(Sign sign, u64 width) {
+//        IntType itype = IntType();
+//        itype.sign = sign;
+//        itype.width = width;
+//    }
 };
 
 

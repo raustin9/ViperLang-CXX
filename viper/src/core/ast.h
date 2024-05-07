@@ -8,6 +8,7 @@
  */
 
 #include "core/result.h"
+#include "core/type.h"
 #include "core/scope.h"
 #include "defines.h"
 #include "token.h"
@@ -109,6 +110,8 @@ struct CodeBlockStatementNode : public ASTNode {
 
 /* Represents an expression. Evaluates to a value */
 struct ExpressionNode : public ASTNode {
+    Type* type;
+    virtual Type* get_type() {return nullptr;}
 };
 
 /* Represents an expression statement. 
@@ -161,6 +164,11 @@ struct ExpressionPrefixNode : public ExpressionNode {
     void print(const std::string& prepend) override {
         std::printf("%s", op.name.c_str());
         rhs->print("    ");
+    }
+
+    Type* get_type() override {
+        
+        return nullptr;
     }
 
     private:

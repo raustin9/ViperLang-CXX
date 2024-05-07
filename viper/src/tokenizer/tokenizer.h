@@ -38,8 +38,8 @@ class Tokenizer {
         char peek_char();
         token_kind lookup_identifier(const std::string& identifier);
         std::string read_identifier();
-        void skip_single_line_comment();
-        void skip_multi_line_comment();
+        token skip_single_line_comment();
+        token skip_multi_line_comment();
         std::string read_string_content();
         void tokenize();
 

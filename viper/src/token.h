@@ -115,6 +115,7 @@ enum token_kind {
     TK_LSQUIRLY, // {
     TK_RSQUIRLY, // }
 
+    TK_COMMENT,  // represents a comment. Meant to be skipped
     TK_EOF,
 };
 
