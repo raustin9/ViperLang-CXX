@@ -22,12 +22,14 @@ struct Type {
         ENUM          = 13,
         SUM           = 14,
         TUPLE         = 15,
-        PROCEDURE     = 16
+        PROCEDURE     = 16,
+        INLINE_PROCEDURE = 17,
+        LAMBDA        = 18,
     };
 
     enum Sign {
         UNSIGNED = 0,
-        SIGNED   = 1
+        SIGNED   = 1,
     };
 
     Kind kind;
@@ -47,12 +49,6 @@ struct Type {
 struct IntType : public Type {
     Sign sign;
     u64 width;
-
-//    static const Type* get(Sign sign, u64 width) {
-//        IntType itype = IntType();
-//        itype.sign = sign;
-//        itype.width = width;
-//    }
 };
 
 
