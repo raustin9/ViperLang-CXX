@@ -1,6 +1,7 @@
 #include "parser.h"
 #include "core/ast.h"
 #include "core/verror.h"
+#include "platform/platform.h"
 #include "token.h"
 #include "tokenizer/tokenizer.h"
 #include <iostream>
@@ -1080,7 +1081,7 @@ token Parser::eat() {
 /// @brief Eat the expected token
 result::Result<token, VError> Parser::eat(token_kind type) {
     if (m_current_token.kind != type) {
-        std::printf("Parser::eat(type): meant to read [%s] but got [%s]!\n"
+        platform::print_line(platform::CYAN, "Parser::eat(type): meant to read [%s] but got [%s]!\n"
                 ,token::kind_to_str(type).c_str()
                 ,token::kind_to_str(m_current_token.kind).c_str()
         );

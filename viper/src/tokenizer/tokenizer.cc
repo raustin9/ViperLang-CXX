@@ -1,5 +1,6 @@
 #include "tokenizer.h"
 #include "token.h"
+#include "platform/platform.h"
 #include <cctype>
 #include <unordered_map>
 #include <iostream>
@@ -378,11 +379,16 @@ loop_begin:
                 return tok;
             } else {
                 tok = token::create_new(token_kind::TK_ILLEGAL, "__%internal_illegal", line_num);
-                std::printf("Illegal token '%s' on line %lu in file %s", 
+                platform::print_error("Illegal token '%s' on line %lu in file %s",
                     tok.name.c_str(),
                     line_num,
                     m_file->name.c_str()
                 );
+//                std::printf("Illegal token '%s' on line %lu in file %s", 
+//                    tok.name.c_str(),
+//                    line_num,
+//                    m_file->name.c_str()
+//                );
             }
             break;
     }
