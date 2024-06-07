@@ -9,7 +9,7 @@
 
 #include "core/result.h"
 #include "core/type.h"
-#include "core/scope.h"
+//#include "core/scope.h"
 #include "defines.h"
 #include "token.h"
 #include "core/context.h"
@@ -38,10 +38,10 @@ enum NodeKind {
     AST_INVALID_NODE
 };
 
-using ResultNode = result::Result<ASTNode*, VError>;
 
 /* Node in the AST */
 struct ASTNode {
+    using ResultNode = result::Result<ASTNode*, VError>;
     ASTNode(NodeKind kind) : kind(kind) {}
     ASTNode() {}
    
@@ -53,19 +53,14 @@ struct ASTNode {
     }
 
     static std::shared_ptr<ASTNode> create_new(token tok, NodeKind kind);
-
-    Context& getContext() {return context;}
-    void setContext(Context context) {}
     virtual void print(const std::string& prepend) {}
-    virtual void add_symbols(Scope* scope) {}
-    virtual void set_scope(Scope* scope) {}
 
 protected:
 
     Context context;
     ASTNode* parent_node;
     std::string module;
-    Scope* scope;
+    //Scope* scope;
 };
 
 /* Represents a block of code consisting of 
@@ -94,11 +89,11 @@ struct CodeBlockStatementNode : public ASTNode {
         std::printf("%s}", prepend.c_str());
     }
 
-    virtual void add_symbols(Scope* scope) override {
-        for (const auto& stmt : body) {
-            stmt->add_symbols(this->scope);
-        }
-    }
+//    virtual void add_symbols(Scope* scope) override {
+//        for (const auto& stmt : body) {
+//            stmt->add_symbols(this->scope);
+//        }
+//    }
 
     private:
     std::vector<ASTNode*> body;
@@ -469,7 +464,7 @@ struct ProcedureNode : public ASTNode {
     std::vector<ASTNode*> parameters; // the parameter definitions for the function
     ASTNode* return_declarator;       
     ASTNode* procedure_declarator;    
-    Scope* scope;
+    //Scope* scope;
     CodeBlockStatementNode* body;
     // std::vector<ASTNode*> code_body;  // code block body of the procedure
 };

@@ -18,7 +18,7 @@ VFile VFile::from(const std::string& file_path, VModule* module) {
     file.name = file_path;
     file.module = module;
 
-    file.scope = new Scope(module->get_scope());
+    //file.scope = new Scope(module->get_scope());
    
     // Open file
     handle.open(file_path.c_str(), std::ios::in);

@@ -15,7 +15,7 @@
 namespace viper {
 struct VFile;
 struct AST;
-class Scope;
+//class Scope;
 class Parser;
 
 /* Module of source code
@@ -25,7 +25,7 @@ class Parser;
 class VModule {
     public:
         ~VModule() {}
-        Scope* get_scope() { return scope; }
+        //Scope* get_scope() { return scope; }
     private:
         VModule() {};
         VModule(struct VFile* file) {
@@ -39,7 +39,7 @@ class VModule {
 
         std::vector<VFile*> m_files;
         
-        Scope* scope;
+        //Scope* scope;
 
         void parse();
 };
@@ -52,7 +52,7 @@ struct VFile {
     std::string name;
     i32 file_number;
     std::string content;
-    Scope* scope;
+    //Scope* scope;
     VModule* module;
 
     // From chibic project. Maybe use?

@@ -18,11 +18,11 @@ namespace viper {
 
 /// PROCEDURE NODE ///
 ProcedureNode::ProcedureNode() {
-    scope = new Scope(nullptr);
+    //scope = new Scope(nullptr);
 }
 
 ProcedureNode::~ProcedureNode() {
-    delete scope;
+    //delete scope;
 }
 
 

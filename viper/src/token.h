@@ -1,7 +1,7 @@
 #pragma once
 
 #include "defines.h"
-#include "core/span.h"
+//#include "core/span.h"
 #include "core/core.h"
 
 #include <string>

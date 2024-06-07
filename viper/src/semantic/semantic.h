@@ -1,7 +1,8 @@
 #pragma once
 
-#include "core/scope.h"
 #include "defines.h"
+#include <memory>
+#include "core/ast.h"
 
 namespace viper {
 

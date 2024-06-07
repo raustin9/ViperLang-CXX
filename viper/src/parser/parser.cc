@@ -182,7 +182,6 @@ ResultNode Parser::parse_if_statement() {
                 static_cast<ConditionalStatementNode*>(r_elif_node.unwrap_or(new ConditionalStatementNode()));
 
             condition_node->set_else_clause(elif_node);
-            // condition_node->else_claus = elif_node;
         } break;
         case TK_ELSE: { // else clause
             ResultNode r_else_node = parse_else_statement();
@@ -193,11 +192,9 @@ ResultNode Parser::parse_if_statement() {
                 static_cast<ConditionalStatementNode*>(r_else_node.unwrap_or(new ConditionalStatementNode()));
 
             condition_node->set_else_clause(else_node);
-            // condition_node->else_claus = else_node;
         } break;
         default:
             condition_node->set_else_clause(nullptr);
-            // condition_node->else_claus = nullptr;
             break;
     }
 
@@ -222,7 +219,6 @@ ResultNode Parser::parse_while_statement() {
     ExpressionNode* condition = 
         static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
     while_loop_node->set_condition(condition);
-    // while_loop_node->condition = condition;
 
     // Parse the code body
     ResultNode r_body = parse_scope();
