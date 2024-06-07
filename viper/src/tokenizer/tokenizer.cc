@@ -378,7 +378,7 @@ loop_begin:
                 return tok;
             } else {
                 tok = token::create_new(token_kind::TK_ILLEGAL, "__%internal_illegal", line_num);
-                std::printf("Illegal token '%s' on line %ul in file %s", 
+                std::printf("Illegal token '%s' on line %lu in file %s", 
                     tok.name.c_str(),
                     line_num,
                     m_file->name.c_str()

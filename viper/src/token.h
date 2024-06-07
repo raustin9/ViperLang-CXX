@@ -1,6 +1,7 @@
 #pragma once
 
 #include "defines.h"
+#include "core/span.h"
 #include "core/core.h"
 
 #include <string>
@@ -156,11 +157,12 @@ struct token {
     u64 value;
     f64 fvalue;
     std::string name;
+    //Span span;
     
     viper::VFile* file;
     u32 line_num;
 
-    static token create_new(token_kind kind, std::string name, u32 line_num) {
+    static token create_new(token_kind kind, std::string name, u64 line_num) {
         token tok;
         tok.kind = kind;
         tok.name = name;

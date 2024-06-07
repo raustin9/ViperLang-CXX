@@ -44,22 +44,22 @@ void TestManager::run_tests() {
 
         char status[30];
         const char* format = 
-            failed ? "*** %d FAILED***" : "*** SUCCESS ***";
+            failed ? "\x1b[31m*** %d FAILED***\x1b[0m" : "\x1b[32m*** SUCCESS ***\x1b[0m";
         std::sprintf(status, format, failed);
 
         total_time += test_duration;
 
-        std::printf("Executed %lu of %lu (skipped %lu) %s (%.6lf sec / %.6lf sec total)\n",
+        std::printf("%s Executed %lu of %lu (skipped %lu) (%.6lf sec / %.6lf sec total)\n",
+                status,
                 i+1,
                 count,
                 skipped,
-                status,
                 test_duration,
                 total_time
         );
     }
 
-    std::printf("Results: %lu passed. %lu failed. %lu skipped. Took %.6lf seconds\n",
+    std::printf("\x1b[36mResults: \x1b[32m%lu passed. \x1b[31m%lu failed. \x1b[36m%lu skipped. Took %.6lf seconds\n\x1b[0m",
         passed,
         failed,
         skipped,
