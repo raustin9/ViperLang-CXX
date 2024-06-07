@@ -1,4 +1,6 @@
 #include "tokenizer.h"
+#include "token.h"
+#include "platform/platform.h"
 #include <cctype>
 #include <unordered_map>
 #include <iostream>
@@ -118,18 +120,20 @@ std::string Tokenizer::read_identifier() {
 
 
 /// @brief Skip over multi line comments
-void Tokenizer::skip_single_line_comment() {
+token Tokenizer::skip_single_line_comment() {
     while (current_char != '\n') {
         read_char();
     }
+
+    return token::create_new(TK_COMMENT, "__%internal_comment_single_line__", 0);
 }
 
 
 /// @brief Skip block comment
-void Tokenizer::skip_multi_line_comment() {
+token Tokenizer::skip_multi_line_comment() {
     if (m_input_ptr->find("*/") == std::string::npos) {
         std::cout << "Unclosed block comment";
-        return;
+        return token::create_new(TK_ILLEGAL, "__%internal_illegal__", 0);
     }
     while (1) {
         if (current_char == '*' && peek_char() == '/') {
@@ -137,6 +141,8 @@ void Tokenizer::skip_multi_line_comment() {
             break;
         }
     }
+    
+    return token::create_new(TK_COMMENT, "__%internal_comment_multi_line__", 0);
 }
 
 
@@ -152,252 +158,20 @@ std::string Tokenizer::read_string_content() {
 }
 
 
-/// TODO: Implement this. IT IS THE COPY PASTE FROM next_token() RIGHT NOW
-/// @brief Get the next token and return it
-token Tokenizer::peek_token() {
-    token tok;
-
-    skip_whitespace();
-
-    switch(current_char) {
-        case '/':
-            if (peek_char() == '/') {
-                skip_single_line_comment();
-            } else if (peek_char() == '*') {
-                skip_multi_line_comment();
-            } else if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(TK_DIVEQ, "/=", line_num);
-            } else {
-                tok = token::create_new(TK_SLASH, std::string(1, current_char), line_num);
-            }
-            break;
-
-
-        case '=':
-            if (peek_char() == '=') {
-                read_char(); // eat the next =
-                tok = token::create_new(TK_EQUALTO, "==", line_num);
-            } else {
-                tok = token::create_new(TK_ASSIGN, std::string(1, current_char), line_num);
-            }
-            break;
-
-        case ';':
-            tok = token::create_new(TK_SEMICOLON, std::string(1, current_char), line_num);
-            break;
-
-        case '(':
-            tok = token::create_new(TK_LPAREN, std::string(1, current_char), line_num);
-            break;
-
-        case ')':
-            tok = token::create_new(TK_RPAREN, std::string(1, current_char), line_num);
-            break;
-
-        case '{':
-            tok = token::create_new(TK_LSQUIRLY, std::string(1, current_char), line_num);
-            break;
-
-        case '}':
-            tok = token::create_new(TK_RSQUIRLY, std::string(1, current_char), line_num);
-            break;
-
-        case '[':
-            tok = token::create_new(TK_LBRACKET, std::string(1, current_char), line_num);
-            break;
-
-        case ']':
-            tok = token::create_new(TK_RBRACKET, std::string(1, current_char), line_num);
-            break;
-
-        case ',':
-            tok = token::create_new(TK_COMMA, std::string(1, current_char), line_num);
-            break;
-        
-        case '.':
-            tok = token::create_new(TK_DOT, std::string(1, current_char), line_num);
-            break;
-        
-        case '+':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(TK_PLUSEQ, "+=", line_num);
-            } else {
-                tok = token::create_new(TK_PLUS, std::string(1, current_char), line_num);
-            }
-            break;
-        
-        case '-':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(TK_MINUSEQ, "-=", line_num);
-            } else {
-                tok = token::create_new(TK_MINUS, std::string(1, current_char), line_num);
-            }
-            break;
-
-        
-        case '*':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(TK_TIMESEQ, "*=", line_num);
-            } else {
-                tok = token::create_new(TK_ASTERISK, std::string(1, current_char), line_num);
-            }
-            break;
-        
-        case '%':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(TK_MODEQ, "%=", line_num);
-            } else {
-                tok = token::create_new(TK_MOD, std::string(1, current_char), line_num);
-            }
-            break;
-        
-        case '<':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(TK_LTEQ, "<=", line_num);
-            } else if (peek_char() == '<') {
-                read_char();
-                if (peek_char() == '=') {
-                    read_char();
-                    tok = token::create_new(token_kind::TK_LSHIFTEQ, "<<=", line_num);
-                } else {
-                    tok = token::create_new(TK_LTEQ, "<=", line_num);
-                }
-            } else {
-                tok = token::create_new(TK_LT, std::string(1, current_char), line_num);
-            }
-            break;
-        
-        case '>':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(TK_GTEQ, ">=", line_num);
-            } else if (peek_char() == '>') {
-                read_char();
-                if (peek_char() == '=') {
-                    read_char();
-                    tok = token::create_new(token_kind::TK_RSHIFTEQ, ">>=", line_num);
-                } else {
-                    tok = token::create_new(TK_GTEQ, ">=", line_num);
-                }
-            } else {
-                tok = token::create_new(TK_GT, std::string(1, current_char), line_num);
-            }
-            break;
-
-        case '!':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(token_kind::TK_NEQUALTO, "!=", line_num);
-            } else {
-                tok = token::create_new(TK_BANG, std::string(1, current_char), line_num);
-            }
-            break;
-
-        case '&':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(token_kind::TK_ANDEQ, "&=", line_num);
-            } else if (peek_char() == '&') {
-                read_char();
-                tok = token::create_new(token_kind::TK_LOG_AND, "&&", line_num);
-            } else {
-                tok = token::create_new(token_kind::TK_AMPERSAND, std::string(1, current_char), line_num);
-            }
-            break;
-        
-        case '|':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(token_kind::TK_OREQ, "|=", line_num);
-            } else if (peek_char() == '|') {
-                read_char();
-                tok = token::create_new(token_kind::TK_LOG_OR, "||", line_num);
-            } else {
-                tok = token::create_new(token_kind::TK_PIPE, std::string(1, current_char), line_num);
-            }
-            break;
-        
-        case '^':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(token_kind::TK_XOREQ, "^=", line_num);
-            } else {
-                tok = token::create_new(token_kind::TK_CARET, std::string(1, current_char), line_num);
-            }
-            break;
-
-        case '~':
-            if (peek_char() == '=') {
-                read_char();
-                tok = token::create_new(token_kind::TK_NEGATEEQ, "~=", line_num);
-            } else {
-                tok = token::create_new(token_kind::TK_TILDE, std::string(1, current_char), line_num);
-            }
-            break;
-
-        case ':':
-            if (peek_char() == ':') {
-                read_char();
-                tok = token::create_new(token_kind::TK_DOUBLECOLON, "::", line_num);
-            } else {
-                tok = token::create_new(token_kind::TK_COLON, std::string(1, current_char), line_num);
-            }
-            break;
-
-        case '"':
-            tok = token::create_new(TK_STR, read_string_content(), line_num);
-            break;
-
-        case '\0':
-            tok = token::create_new(token_kind::TK_EOF, "__%internal_eof", line_num);
-            break;
-            
-        default:
-            if (isalpha(current_char) != 0) {
-                tok.name = read_identifier();
-                tok.kind = lookup_identifier(tok.name);
-                tok.line_num = line_num;
-                tokens.push_back(tok);
-                return tok;
-            } else if (isdigit(current_char) != 0) {
-                tok = read_number();
-                tok.line_num = line_num;
-                tokens.push_back(tok);
-                return tok;
-            } else {
-                tok = token::create_new(token_kind::TK_ILLEGAL, "__%internal_illegal", line_num);
-                std::printf("Illegal token '%s' on line %ul in file %s", 
-                    tok.name.c_str(),
-                    line_num,
-                    m_file->name.c_str()
-                );
-            }
-            break;
-    }
-
-    read_char();
-    return tok;
-}
-
-
 /// @brief Get the next token and return it
 token Tokenizer::next_token() {
     token tok;
 
+loop_begin:
     skip_whitespace();
-
     switch(current_char) {
         case '/':
             if (peek_char() == '/') {
-                skip_single_line_comment();
+                (void)skip_single_line_comment();
+                goto loop_begin;
             } else if (peek_char() == '*') {
-                skip_multi_line_comment();
+                (void)skip_multi_line_comment();
+                goto loop_begin;
             } else if (peek_char() == '=') {
                 read_char();
                 tok = token::create_new(TK_DIVEQ, "/=", line_num);
@@ -605,11 +379,16 @@ token Tokenizer::next_token() {
                 return tok;
             } else {
                 tok = token::create_new(token_kind::TK_ILLEGAL, "__%internal_illegal", line_num);
-                std::printf("Illegal token '%s' on line %ul in file %s", 
+                platform::print_error("Illegal token '%s' on line %lu in file %s",
                     tok.name.c_str(),
                     line_num,
                     m_file->name.c_str()
                 );
+//                std::printf("Illegal token '%s' on line %lu in file %s", 
+//                    tok.name.c_str(),
+//                    line_num,
+//                    m_file->name.c_str()
+//                );
             }
             break;
     }
@@ -641,7 +420,7 @@ Tokenizer Tokenizer::create_new(VFile* file) {
 
     tok.keywords["const"] = TK_CONST;
     tok.keywords["let"] = TK_LET;
-    tok.keywords["proc"] = TK_PROC;
+    tok.keywords["define"] = TK_DEFINE;
     tok.keywords["return"] = TK_RETURN;
     tok.keywords["struct"] = TK_STRUCT;
     tok.keywords["enum"] = TK_ENUM;

@@ -8,11 +8,15 @@
 #include <vector>
 #include <unordered_map>
 #include <optional>
+#include <memory>
 #include <format>
 
 
 namespace viper {
 struct VFile;
+struct AST;
+//class Scope;
+class Parser;
 
 /* Module of source code
  *
@@ -21,8 +25,12 @@ struct VFile;
 class VModule {
     public:
         ~VModule() {}
+        //Scope* get_scope() { return scope; }
     private:
         VModule() {};
+        VModule(struct VFile* file) {
+            m_files.push_back(file);
+        };
         VModule(const VModule&) = delete;
         VModule(VModule&&) = default;
 
@@ -30,6 +38,10 @@ class VModule {
         void add_file(VFile* file);
 
         std::vector<VFile*> m_files;
+        
+        //Scope* scope;
+
+        void parse();
 };
 
 
@@ -40,6 +52,8 @@ struct VFile {
     std::string name;
     i32 file_number;
     std::string content;
+    //Scope* scope;
+    VModule* module;
 
     // From chibic project. Maybe use?
     std::string display_name;
@@ -47,10 +61,17 @@ struct VFile {
 
     std::unordered_map<std::string, VModule*> dependency_modules;
 
-    static VFile from(const std::string& file_path);
+    static VFile from(const std::string& file_path, VModule* module);
     static VFile* create_new_ptr();
 
     VResult<std::string, VError> add_dependency_module(const std::string& name, VModule* mod);
+
+    std::shared_ptr<AST> ast; // Root node of the file
+    void parse();
+    void print_ast();
+
+    void compile();
+    void analyze();
 };
 
 }

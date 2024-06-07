@@ -1,4 +1,7 @@
 #include "core.h"
+#include "semantic/semantic.h"
+#include "tokenizer/tokenizer.h"
+#include "parser/parser.h"
 
 #include <cstdlib>
 #include <fstream>
@@ -8,11 +11,14 @@ namespace viper {
 
 /// @brief Create a file with content read from specified file path
 /// @param file_path The path to the file we want to read source code from
-VFile VFile::from(const std::string& file_path) {
+VFile VFile::from(const std::string& file_path, VModule* module) {
     VFile file;
     std::size_t file_length;
     std::fstream handle;
     file.name = file_path;
+    file.module = module;
+
+    //file.scope = new Scope(module->get_scope());
    
     // Open file
     handle.open(file_path.c_str(), std::ios::in);
@@ -34,6 +40,23 @@ VFile VFile::from(const std::string& file_path) {
 }
 
 
+/// @brief Parse the content of the file
+void VFile::parse() {
+    Tokenizer lexer = Tokenizer::create_new(this);
+    Parser parser = Parser::create_new(&lexer);
+
+    ast = parser.parse();
+}
+
+/// @brief Parse a single top-level statemetn
+/// of a file
+
+
+void VFile::print_ast() {
+    ast->print_tree();
+}
+
+
 /// @brief Add a module as a dependancy for a file
 VResult<std::string, VError> VFile::add_dependency_module(const std::string& name, VModule* mod) {
     dependency_modules[name] = mod;
@@ -46,6 +69,16 @@ VFile* VFile::create_new_ptr() {
     VFile* file = new VFile();
 
     return file;
+}
+
+void VFile::analyze() {
+    SemanticAnalyzer* analyzer = new SemanticAnalyzer(ast);
+    analyzer->analyze_ast();
+}
+
+void VFile::compile() {
+    parse();
+    analyze();
 }
 
 } // core namespace

@@ -5,13 +5,24 @@
 #pragma once
 
 #include "defines.h"
-#include <string>
 
 namespace platform {
 
-/// @brief Print a line to the screen
-void print_line(const std::string& text, u8 color);
+/// The list of colors that we are able to print
+enum color_e: u8 {
+    WHITE,
+    RED,
+    BLUE,
+    GREEN,
+    CYAN,
+    MAGENTA,
+    YELLOW,
+};
 
-void print_error(const std::string& text, u8 color);
+/// Print a line to the console
+void print_line(color_e color, const char* fmt, ...);
 
-}
+/// Print an error line to the console
+void print_error(const char* fmt, ...);
+
+} // Platform namespace

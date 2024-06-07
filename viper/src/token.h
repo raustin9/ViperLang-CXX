@@ -1,6 +1,7 @@
 #pragma once
 
 #include "defines.h"
+//#include "core/span.h"
 #include "core/core.h"
 
 #include <string>
@@ -17,7 +18,7 @@ enum token_kind {
     // Keywords
     TK_CONST,
     TK_LET,
-    TK_PROC,
+    TK_DEFINE,
     TK_RETURN,
     TK_STRUCT,
     TK_ENUM,
@@ -115,6 +116,7 @@ enum token_kind {
     TK_LSQUIRLY, // {
     TK_RSQUIRLY, // }
 
+    TK_COMMENT,  // represents a comment. Meant to be skipped
     TK_EOF,
 };
 
@@ -155,11 +157,12 @@ struct token {
     u64 value;
     f64 fvalue;
     std::string name;
+    //Span span;
     
     viper::VFile* file;
     u32 line_num;
 
-    static token create_new(token_kind kind, std::string name, u32 line_num) {
+    static token create_new(token_kind kind, std::string name, u64 line_num) {
         token tok;
         tok.kind = kind;
         tok.name = name;
@@ -173,7 +176,7 @@ struct token {
         kind_map[TK_IDENT] = "TK_IDENT";
         kind_map[TK_CONST] = "TK_CONST";
         kind_map[TK_LET] = "TK_LET";
-        kind_map[TK_PROC] = "TK_PROC";
+        kind_map[TK_DEFINE] = "TK_DEFINE";
         kind_map[TK_RETURN] = "TK_RETURN";
         kind_map[TK_STRUCT] = "TK_STRUCT";
         kind_map[TK_ENUM] = "TK_ENUM";

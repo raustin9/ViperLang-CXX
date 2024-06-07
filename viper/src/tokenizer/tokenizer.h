@@ -38,8 +38,8 @@ class Tokenizer {
         char peek_char();
         token_kind lookup_identifier(const std::string& identifier);
         std::string read_identifier();
-        void skip_single_line_comment();
-        void skip_multi_line_comment();
+        token skip_single_line_comment();
+        token skip_multi_line_comment();
         std::string read_string_content();
         void tokenize();
 
@@ -48,7 +48,7 @@ class Tokenizer {
         VFile* m_file;                                          // [NOT OWNED] Pointer to the file's content we are tokenizing
         std::unordered_map<std::string, token_kind> keywords;   // Keywords with corresponding tokens
         std::vector<token> tokens;
-        u32 line_num = 0;                                       // Line number of the file we are currently on
+        u64 line_num = 0;                                       // Line number of the file we are currently on
         u64 position = 0;                                       
         u64 read_position = 0;
         char current_char;                                      // Current character of the source  code

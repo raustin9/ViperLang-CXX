@@ -1,8 +1,10 @@
 #include "parser.h"
 #include "core/ast.h"
 #include "core/verror.h"
+#include "platform/platform.h"
 #include "token.h"
 #include "tokenizer/tokenizer.h"
+#include <iostream>
 
 namespace viper {
 
@@ -104,6 +106,34 @@ ResultNode Parser::parse_statement() {
 }
 
 
+/// @brief Parse a code block statement
+/// {
+///      let i: i32 = foo();
+///      bar();
+///      ...
+/// }
+ResultNode Parser::parse_scope() {
+    CodeBlockStatementNode* scope = new CodeBlockStatementNode();
+    (void) eat(TK_LSQUIRLY);
+
+    // Parse all the statements
+    while (m_current_token.kind != TK_RSQUIRLY) {
+        auto stmt_res = parse_statement();
+        if (stmt_res.is_err()) {
+            std::cout << "2" << std::endl;
+            error_msgs.push_back(stmt_res.unwrap_err());
+        }
+        ASTNode* stmt = stmt_res.unwrap_or(
+            new ASTNode(NodeKind::AST_INVALID_NODE)
+        );
+        scope->add_stmt(stmt);
+    }
+
+    (void) eat(TK_RSQUIRLY);
+    return result::Ok(scope);
+}
+
+
 /// @brief Parse an if statement
 /// Represents a conditional statement
 /// if (condition) {
@@ -115,7 +145,9 @@ ResultNode Parser::parse_statement() {
 /// }
 ResultNode Parser::parse_if_statement() {
     ConditionalStatementNode* condition_node = new ConditionalStatementNode();
-    condition_node->tok = m_current_token;
+    // condition_node->tok = m_current_token;
+    condition_node->set_variant(m_current_token);
+
     (void) eat(TK_IF);
 
     ResultNode r_condition = parse_expr();
@@ -129,22 +161,17 @@ ResultNode Parser::parse_if_statement() {
     }
     ExpressionNode* condition = 
         static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
-    condition_node->condition = condition;
+    // condition_node->condition = condition;
+    condition_node->set_condition(condition);
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        condition_node->body.push_back(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
-
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    condition_node->set_body(body);
 
     switch (m_current_token.kind) {
         case TK_ELIF: { // elif clause
@@ -155,7 +182,7 @@ ResultNode Parser::parse_if_statement() {
             ConditionalStatementNode* elif_node = 
                 static_cast<ConditionalStatementNode*>(r_elif_node.unwrap_or(new ConditionalStatementNode()));
 
-            condition_node->else_claus = elif_node;
+            condition_node->set_else_clause(elif_node);
         } break;
         case TK_ELSE: { // else clause
             ResultNode r_else_node = parse_else_statement();
@@ -165,10 +192,10 @@ ResultNode Parser::parse_if_statement() {
             ConditionalStatementNode* else_node = 
                 static_cast<ConditionalStatementNode*>(r_else_node.unwrap_or(new ConditionalStatementNode()));
 
-            condition_node->else_claus = else_node;
+            condition_node->set_else_clause(else_node);
         } break;
         default:
-            condition_node->else_claus = nullptr;
+            condition_node->set_else_clause(nullptr);
             break;
     }
 
@@ -179,7 +206,6 @@ ResultNode Parser::parse_if_statement() {
 /// @brief Parse a while loop statement
 ResultNode Parser::parse_while_statement() {
     WhileLoopStatementNode* while_loop_node = new WhileLoopStatementNode();
-    while_loop_node->tok = m_current_token;
     (void) eat(TK_WHILE);
 
     ResultNode r_condition = parse_expr();
@@ -193,22 +219,17 @@ ResultNode Parser::parse_while_statement() {
     }
     ExpressionNode* condition = 
         static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
-    while_loop_node->condition = condition;
+    while_loop_node->set_condition(condition);
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        while_loop_node->body.push_back(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
-
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    while_loop_node->set_body(body);
+    
     return result::Ok(while_loop_node);
 }
 
@@ -224,7 +245,7 @@ ResultNode Parser::parse_expression_statement() {
     ExpressionNode* expr = 
         static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
 
-    expr_stmt->expr = expr;
+    expr_stmt->set_expr(expr);
     return result::Ok(expr_stmt);
 }
 
@@ -234,22 +255,17 @@ ResultNode Parser::parse_expression_statement() {
 /// } while (condition);
 ResultNode Parser::parse_do_while_statement() {
     DoWhileLoopStatementNode* do_while_node = new DoWhileLoopStatementNode();
-    std::printf("FJDSKLFJLSD\n");
     (void) eat(TK_DO);
 
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        do_while_node->body.push_back(stmt);
+    // Parse code block body
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    do_while_node->set_body(body);
 
-    (void) eat(TK_RSQUIRLY);
     (void) eat(TK_WHILE);
     
     ResultNode r_condition = parse_expr();
@@ -263,7 +279,7 @@ ResultNode Parser::parse_do_while_statement() {
     }
     ExpressionNode* condition = 
         static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
-    do_while_node->condition = condition;
+    do_while_node->set_condition(condition);
 
     return result::Ok(do_while_node);
 }
@@ -283,7 +299,6 @@ ResultNode Parser::parse_for_statement() {
         error_msgs.push_back(r_init_node.unwrap_err());
     }
     ASTNode* init_node = r_init_node.unwrap_or(new ASTNode());
-    // (void) eat(TK_SEMICOLON);
 
     // Parse the condition
     ResultNode r_condition = parse_expr();
@@ -303,22 +318,18 @@ ResultNode Parser::parse_for_statement() {
     (void) eat(TK_RPAREN);
 
     // Parse code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        for_node->body.push_back(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        std::cout << "1" << std::endl;
+        error_msgs.push_back(r_body.unwrap_err());
     }
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
 
-    for_node->initialization = init_node;
-    for_node->condition = condition;
-    for_node->action = action_node;
+    for_node->set_initialization(init_node);
+    for_node->set_condition(condition);
+    for_node->set_action(action_node);
+    for_node->set_body(body);
 
     return result::Ok(for_node);
 }
@@ -327,7 +338,7 @@ ResultNode Parser::parse_for_statement() {
 /// @brief Parse elif clause portion of a conditional
 ResultNode Parser::parse_elif_statement() {
     ConditionalStatementNode* elif_node = new ConditionalStatementNode();
-    elif_node->tok = m_current_token;
+    elif_node->set_variant(m_current_token);
     (void) eat(TK_ELIF);
 
     ResultNode r_condition = parse_expr();
@@ -341,22 +352,16 @@ ResultNode Parser::parse_elif_statement() {
     }
     ExpressionNode* condition = 
         static_cast<ExpressionNode*>(r_condition.unwrap_or(new ExpressionNode()));
-    elif_node->condition = condition;
+    elif_node->set_condition(condition);
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto r_stmt = parse_statement();
-        if (r_stmt.is_err()) {
-            error_msgs.push_back(r_stmt.unwrap_err());
-        }
-        ASTNode* stmt = r_stmt.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        elif_node->body.push_back(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
-
-    (void) eat(TK_RSQUIRLY);
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    elif_node->set_body(body);
 
     switch (m_current_token.kind) {
         case TK_ELIF: { // elif clause
@@ -367,7 +372,7 @@ ResultNode Parser::parse_elif_statement() {
             ConditionalStatementNode* node = 
                 static_cast<ConditionalStatementNode*>(r_elif_node.unwrap_or(new ConditionalStatementNode()));
 
-            elif_node->else_claus = node;
+            elif_node->set_else_clause(node);
         } break;
         case TK_ELSE: { // else clause
             ResultNode r_elif_node = parse_else_statement();
@@ -377,10 +382,10 @@ ResultNode Parser::parse_elif_statement() {
             ConditionalStatementNode* node = 
                 static_cast<ConditionalStatementNode*>(r_elif_node.unwrap_or(new ConditionalStatementNode()));
 
-            elif_node->else_claus = node;
+            elif_node->set_else_clause(node);
         } break;
         default:
-            elif_node->else_claus = nullptr;
+            elif_node->set_else_clause(nullptr);
             break;
     }
     return result::Ok(elif_node);
@@ -390,29 +395,26 @@ ResultNode Parser::parse_elif_statement() {
 /// @brief Parse elif clause portion of a conditional
 ResultNode Parser::parse_else_statement() {
     ConditionalStatementNode* else_node = new ConditionalStatementNode();
-    else_node->tok = m_current_token;
+    else_node->set_variant(m_current_token);
+    // else_node->tok = m_current_token;
     (void) eat(TK_ELSE);
 
     // No condition for else claus
-    else_node->condition = nullptr;
+    else_node->set_condition(nullptr);
+    // else_node->condition = nullptr;
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto r_stmt = parse_statement();
-        if (r_stmt.is_err()) {
-            error_msgs.push_back(r_stmt.unwrap_err());
-        }
-        ASTNode* stmt = r_stmt.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        else_node->body.push_back(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    else_node->set_body(body);
+    
+    else_node->set_else_clause(nullptr);
 
-    (void) eat(TK_RSQUIRLY);
-    else_node->else_claus = nullptr;
-
-    // Else marks the end of the conditional chain
+    // Else marks the end of the conditional chain -- no further parsing
 
     return result::Ok(else_node);
 }
@@ -432,7 +434,8 @@ ResultNode Parser::parse_return_statement() {
         );
     }
     ExpressionNode* expr = static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
-    return_node->expr = expr;
+    return_node->set_expr(expr);
+    // return_node->expr = expr;
     return result::Ok(return_node);
 }
 
@@ -469,8 +472,9 @@ ResultNode Parser::parse_expr_str() {
     ExpressionStringLiteralNode* str_expr = new ExpressionStringLiteralNode();
     token str = m_current_token;
     (void) eat(TK_STR);
-    
-    str_expr->tok = str;
+   
+    str_expr->set_token(str);
+    //str_expr->tok = str;
 
     return result::Ok(str_expr);
 }
@@ -514,7 +518,8 @@ ResultNode Parser::parse_expr_identifier() {
                 );
             }
             ExpressionNode* arg_expr = static_cast<ExpressionNode*>(r_arg_expr.unwrap_or(new ExpressionNode()));
-            call_expr->arguments.push_back(arg_expr);
+            //call_expr->arguments.push_back(arg_expr);
+            call_expr->add_argument(arg_expr);
 
             if (m_current_token.kind == TK_COMMA) {
                 (void) eat(TK_COMMA);
@@ -532,7 +537,8 @@ ResultNode Parser::parse_expr_identifier() {
         }
 
         (void) eat(TK_RPAREN);
-        call_expr->identifier = identifier;
+        call_expr->set_identifier(identifier);
+        // call_expr->identifier = identifier;
         return result::Ok(call_expr);
     } else if (m_current_token.kind == TK_LBRACKET) {
         // Dimension access
@@ -552,8 +558,10 @@ ResultNode Parser::parse_expr_identifier() {
         
         ExpressionNode* expr = static_cast<ExpressionNode*>(r_expr.unwrap_or(new ExpressionNode()));
         ExpressionIdentifierNode* ident_expr = new ExpressionIdentifierNode();
-        ident_expr->expr = expr;
-        ident_expr->identifier = identifier;
+        // ident_expr->expr = expr;
+        ident_expr->set_expr(expr);
+        ident_expr->set_identifier(identifier);
+        // ident_expr->identifier = identifier;
         return result::Ok(ident_expr);
     } else if (m_current_token.kind == TK_DOT) {
         // Member access
@@ -571,19 +579,17 @@ ResultNode Parser::parse_expr_identifier() {
         }
         ExpressionNode* access_expr = static_cast<ExpressionNode*>(r_access_expr.unwrap_or(new ExpressionNode()));
         ExpressionMemberAccessNode* member_expr = new ExpressionMemberAccessNode();
-        member_expr->identifier = identifier;
-        member_expr->access = access_expr;
+        member_expr->set_identifier(identifier);
+        member_expr->set_access(access_expr);
 
         return result::Ok(member_expr);
     }
 
-    // TODO: . operator for member access
-    // TODO: [] operator for dimension access
-
     // If not procedure call, then normal variable reference
     ExpressionIdentifierNode* ident_expr = new ExpressionIdentifierNode();
-    ident_expr->identifier = identifier;
-    ident_expr->expr = nullptr;
+    ident_expr->set_identifier(identifier);
+    ident_expr->set_expr(nullptr);
+    
     return result::Ok(ident_expr);
 }
 
@@ -690,9 +696,9 @@ ResultNode Parser::parse_expr_binary(ExpressionNode* lhs, prec_e min_prec) {
     }
 
     ExpressionBinaryNode* expr = new ExpressionBinaryNode();
-    expr->lhs = lhs;
-    expr->op = op;
-    expr->rhs = rhs;
+    expr->set_lhs(lhs);
+    expr->set_operator(op);
+    expr->set_rhs(rhs);
 
     return result::Ok(expr);
 }
@@ -707,12 +713,12 @@ ResultNode Parser::parse_expr_prefix() {
     if (!is_prefix_op(prefix)) {
         return result::Err(VError::create_new(error_type::PARSER_ERR, "Invalid prefix operator {}. Did you mean ! or ~?", token::kind_to_str(prefix.kind)));
     }
-   
-    expr->op = prefix;
+  
+    expr->set_operator(prefix);
     (void) eat(prefix.kind).unwrap();
     
     ResultNode r_RHS = parse_expr_primary();
-    expr->rhs = static_cast<ExpressionNode*>(r_RHS.unwrap());
+    expr->set_rhs(r_RHS);
 
     return result::Ok(expr);
 }
@@ -724,7 +730,7 @@ ResultNode Parser::parse_struct() {
     StructDefinitionNode* struct_node = new StructDefinitionNode();
     (void) eat(TK_STRUCT);
     token identifier = m_current_token;
-    struct_node->identifier = identifier;
+    struct_node->set_identifier(identifier);
     (void) eat(TK_IDENT);
 
     // Read the definition body
@@ -740,7 +746,7 @@ ResultNode Parser::parse_struct() {
             );
         }
         ASTNode* field = r_field.unwrap_or(new ASTNode());
-        struct_node->fields.push_back(field);
+        struct_node->add_field(field);
     }
 
     (void) eat(TK_RSQUIRLY);
@@ -756,7 +762,7 @@ ResultNode Parser::parse_struct_member() {
                 
                 token identifier = m_current_token;
                 (void) eat(TK_IDENT);
-                field_node->identifier = identifier;
+                field_node->set_identifier(identifier);
                 
                 (void) eat(TK_DOUBLECOLON);
                 
@@ -770,14 +776,15 @@ ResultNode Parser::parse_struct_member() {
                     );
                 }
                 ASTNode* data_type = r_data_type.unwrap_or(new ASTNode());
-                field_node->type_spec = data_type;
+                field_node->set_type_spec(data_type);
+                // field_node->type_spec = data_type;
 
                 (void) eat(TK_SEMICOLON);
                 
                 return result::Ok(field_node);
             }
             break;
-        case TK_PROC: {
+        case TK_DEFINE: {
             ResultNode r_method_node = parse_procedure();
             if (r_method_node.is_err()) {
                 error_msgs.push_back(
@@ -865,18 +872,6 @@ ResultNode Parser::parse_let_statement() {
 }
 
 
-/// @brief Parse a block of code
-ResultNode Parser::parse_code_block() {    
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-
-    }
-
-    (void) eat(TK_RSQUIRLY);
-    return result::Err(VError::create_new(error_type::PARSER_ERR, "parse_code_block not implemented yet!"));
-}
-
 /// @brief Parse a procedure (function)
 /// Return the AST node created from it
 ///
@@ -886,13 +881,13 @@ ResultNode Parser::parse_procedure() {
     
     // Get the 'proc' token 
     token proc_token = m_current_token;
-    auto r_proc =  eat(TK_PROC);
+    auto r_proc =  eat(TK_DEFINE);
     if (r_proc.is_err()) {
         auto proc_err = r_proc.unwrap_err();
         error_msgs.push_back(proc_err);
     }
     token proc_tok = r_proc.unwrap_or(
-        token::create_new(TK_PROC, "__%internal_proc_err", m_current_token.line_num)
+        token::create_new(TK_DEFINE, "__%internal_proc_err", m_current_token.line_num)
     );
    
     // Eat the identifier
@@ -934,19 +929,14 @@ ResultNode Parser::parse_procedure() {
     proc_node->set_return_type(return_type);
 
     // Parse the code body
-    (void) eat(TK_LSQUIRLY);
-    while (m_current_token.kind != TK_RSQUIRLY) {
-        auto stmt_res = parse_statement();
-        if (stmt_res.is_err()) {
-            error_msgs.push_back(stmt_res.unwrap_err());
-        }
-        ASTNode* stmt = stmt_res.unwrap_or(
-            new ASTNode(NodeKind::AST_INVALID_NODE)
-        );
-        proc_node->add_statement(stmt);
+    ResultNode r_body = parse_scope();
+    if (r_body.is_err()) {
+        error_msgs.push_back(r_body.unwrap_err());
     }
+    CodeBlockStatementNode* body = 
+        static_cast<CodeBlockStatementNode*>(r_body.unwrap_or(new CodeBlockStatementNode()));
+    proc_node->set_body(body);
     
-    (void) eat(TK_RSQUIRLY);
     return result::Ok(proc_node);
 }
 
@@ -1000,29 +990,64 @@ ResultNode Parser::parse_proc_parameter() {
 /// @returns the Abstract Syntax tree
 std::shared_ptr<AST> Parser::parse() {
     /* Parse at the top level  of file */
-    while (m_current_token.kind != TK_EOF) {
-        switch (m_current_token.kind) {
-            case TK_PROC: {
-                auto node = parse_procedure().unwrap();
-                m_ast->add_node(node);
-            } break;
-            case TK_LET: {
-                auto node = parse_let_statement().unwrap();
-                (void) eat(TK_SEMICOLON);
-                m_ast->add_node(node);
-            } break;
-            case TK_STRUCT: {
-                auto node = parse_struct().unwrap();
-                m_ast->add_node(node);
-            } break;
-            default:
-                break;
-        }
-        // std::printf("TOKEN: %s\n", token::kind_to_str(m_current_token.kind).c_str());
+//    while (m_current_token.kind != TK_EOF) {
+//        switch (m_current_token.kind) {
+//            case TK_DEFINE: {
+//                auto node = parse_procedure().unwrap();
+//                m_ast->add_node(node);
+//            } break;
+//            case TK_LET: {
+//                auto node = parse_let_statement().unwrap();
+//                (void) eat(TK_SEMICOLON);
+//                m_ast->add_node(node);
+//            } break;
+//            case TK_STRUCT: {
+//                auto node = parse_struct().unwrap();
+//                m_ast->add_node(node);
+//            } break;
+//            default:
+//                std::printf("DEFAULT TOKEN: %s\n", token::kind_to_str(m_current_token.kind).c_str());
+//                break;
+//        }
+//    }
+    auto node = parse_top_level_statement();
+    while (node.has_value()
+           && node.value()->kind != AST_INVALID_NODE
+    ) {
+        node = parse_top_level_statement();
+    }
+    
+    return m_ast;
+}
+
+std::optional<ASTNode*> Parser::parse_top_level_statement() {
+    if (m_current_token.kind == TK_EOF) {
+        return std::nullopt;
     }
 
 
-    return m_ast;
+    switch (m_current_token.kind) {
+        case TK_DEFINE: {
+            auto node = parse_procedure().unwrap();
+            m_ast->add_node(node);
+            return node;
+        } break;
+        case TK_LET: {
+            auto node = parse_let_statement().unwrap();
+            (void) eat(TK_SEMICOLON);
+            m_ast->add_node(node);
+            return node;
+        } break;
+        case TK_STRUCT: {
+            auto node = parse_struct().unwrap();
+            m_ast->add_node(node);
+            return node;
+        } break;
+        default: {
+            ASTNode* node = new ASTNode(AST_INVALID_NODE);
+            return node;
+        } break;
+    }
 }
 
 
@@ -1056,7 +1081,7 @@ token Parser::eat() {
 /// @brief Eat the expected token
 result::Result<token, VError> Parser::eat(token_kind type) {
     if (m_current_token.kind != type) {
-        std::printf("Parser::eat(type): meant to read [%s] but got [%s]!\n"
+        platform::print_line(platform::CYAN, "Parser::eat(type): meant to read [%s] but got [%s]!\n"
                 ,token::kind_to_str(type).c_str()
                 ,token::kind_to_str(m_current_token.kind).c_str()
         );

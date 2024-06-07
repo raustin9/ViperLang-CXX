@@ -4,14 +4,14 @@
 
 // Test the tokenizer
 uint8_t lexer_test_proc_with_comments() {
-    std::string input = "proc main(): i32 {"
+    std::string input = "define main(): i32 {"
         "   let x: u32 = 1;"
         " // this is a test comment\n\n"
         "   return 0;"
         "}";
     
     std::vector<viper::token_kind> expected = {
-        viper::token_kind::TK_PROC,
+        viper::token_kind::TK_DEFINE,
         viper::token_kind::TK_IDENT,
         viper::token_kind::TK_LPAREN,
         viper::token_kind::TK_RPAREN,
@@ -58,13 +58,13 @@ uint8_t lexer_test_proc_with_comments() {
 
 // Test the tokenizer
 uint8_t lexer_test_main_proc() {
-    std::string input = "proc main(): i32 {"
+    std::string input = "define main(): i32 {"
         "   let x: u32 = 1;"
         "   return 0;"
         "}";
     
     std::vector<viper::token_kind> expected = {
-        viper::token_kind::TK_PROC,
+        viper::token_kind::TK_DEFINE,
         viper::token_kind::TK_IDENT,
         viper::token_kind::TK_LPAREN,
         viper::token_kind::TK_RPAREN,
@@ -110,14 +110,14 @@ uint8_t lexer_test_main_proc() {
 }
 
 uint8_t lexer_test_string_literals() {
-    std::string input = "proc main(): i32 {"
+    std::string input = "define main(): i32 {"
         "   let test: u8 = \"test string content\";"
         "   return 0;"
         "}";
     
     std::vector<viper::token_kind> expected = {
     // std::vector<viper::token_kind> expected = {
-        viper::token_kind::TK_PROC,
+        viper::token_kind::TK_DEFINE,
         viper::token_kind::TK_IDENT,
         viper::token_kind::TK_LPAREN,
         viper::token_kind::TK_RPAREN,

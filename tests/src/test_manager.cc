@@ -33,18 +33,19 @@ void TestManager::run_tests() {
         auto test_duration = std::chrono::duration<double, std::chrono::seconds::period>(test_finish - test_start).count();
         
         if (result) {
+            std::printf("\x1b[32m[PASSED]: %s\n\x1b[0m", m_tests[i].description.c_str());
             passed++;
         } else if (result == BYPASS) {
-            std::printf("[SKIPPED]: %s\n", m_tests[i].description.c_str());
+            std::printf("\x1b[36m[SKIPPED]: %s\n\x1b[0m", m_tests[i].description.c_str());
             ++skipped;
         } else {
-            std::printf("[FAILED]: %s\n", m_tests[i].description.c_str());
+            std::printf("\x1b[31m[FAILED]: %s\n\x1b[0m", m_tests[i].description.c_str());
             ++failed;
         }
 
         char status[30];
         const char* format = 
-            failed ? "*** %d FAILED***" : "*** SUCCESS ***";
+            failed ? "\x1b[31m*** %d FAILED***\x1b[0m" : "\x1b[32m*** SUCCESS ***\x1b[0m";
         std::sprintf(status, format, failed);
 
         total_time += test_duration;
@@ -59,7 +60,7 @@ void TestManager::run_tests() {
         );
     }
 
-    std::printf("Results: %lu passed. %lu failed. %lu skipped. Took %.6lf seconds\n",
+    std::printf("\x1b[36mResults: \x1b[32m%lu passed. \x1b[31m%lu failed. \x1b[36m%lu skipped. Took %.6lf seconds\n\x1b[0m",
         passed,
         failed,
         skipped,
