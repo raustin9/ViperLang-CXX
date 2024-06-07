@@ -18,7 +18,7 @@ enum token_kind {
     // Keywords
     TK_CONST,
     TK_LET,
-    TK_PROC,
+    TK_DEFINE,
     TK_RETURN,
     TK_STRUCT,
     TK_ENUM,
@@ -176,7 +176,7 @@ struct token {
         kind_map[TK_IDENT] = "TK_IDENT";
         kind_map[TK_CONST] = "TK_CONST";
         kind_map[TK_LET] = "TK_LET";
-        kind_map[TK_PROC] = "TK_PROC";
+        kind_map[TK_DEFINE] = "TK_DEFINE";
         kind_map[TK_RETURN] = "TK_RETURN";
         kind_map[TK_STRUCT] = "TK_STRUCT";
         kind_map[TK_ENUM] = "TK_ENUM";

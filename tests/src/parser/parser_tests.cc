@@ -18,7 +18,7 @@ uint8_t parser_test_basic() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+    file->content = "define main(param1: i32, param2: f32): i32 {\n"
                     "   let i: i32 = 5.0;\n"
                     "}\n"
                     ;
@@ -43,7 +43,7 @@ uint8_t parser_struct_basic() {
     file->content = 
         "struct test_struct {\n"
         "   name :: i32;\n"
-        "   proc test(): i32 {\n"
+        "   define test(): i32 {\n"
         "       let i: i32 = 0;\n"
         "   }\n"
         "}\n"
@@ -68,7 +68,7 @@ uint8_t parser_return_basic() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+    file->content = "define main(param1: i32, param2: f32): i32 {\n"
                     "   let i: i32 = 5.0;\n"
                     "   return i + 2 * i;\n"
                     "}\n"
@@ -92,7 +92,7 @@ uint8_t parser_conditionals() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+    file->content = "define main(param1: i32, param2: f32): i32 {\n"
                     "   let i: i32 = 5.0;\n"
                     "   if 1 + 2 {\n"
                     "       let u: i32 = 0 + i;\n"
@@ -122,7 +122,7 @@ uint8_t parser_for_loop() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+    file->content = "define main(param1: i32, param2: f32): i32 {\n"
                     "   let i: i32 = 5.0;\n"
                     "   for (let i: i32 = 0; i < 5; i += 1 * 3) {\n"
                     "       let u: i32 = 0 + i;\n"
@@ -148,7 +148,7 @@ uint8_t parser_while_loop() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+    file->content = "define main(param1: i32, param2: f32): i32 {\n"
                     "   let i: i32 = 5.0;\n"
                     "   while (i + 2) {\n"
                     "       let i: i32 = 5 + 1;\n"
@@ -178,7 +178,7 @@ uint8_t parser_do_while_loop() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "proc main(param1: i32, param2: f32): i32 {\n"
+    file->content = "define main(param1: i32, param2: f32): i32 {\n"
                     "   let i: i32 = 5.0;\n"
                     "   do {\n"
                     "       let i: i32 = 5 + 1;\n"
@@ -208,7 +208,7 @@ uint8_t parser_test_custom_typespec() {
     
     viper::VFile* file = viper::VFile::create_new_ptr();
     file->name = "test.viper";
-    file->content = "proc main(param1: User, param2: f32): i32 {\n"
+    file->content = "define main(param1: User, param2: f32): i32 {\n"
                     "   let i: i32 = 5.0;\n"
                     "}\n"
                     ;

@@ -414,7 +414,7 @@ Tokenizer Tokenizer::create_new(VFile* file) {
 
     tok.keywords["const"] = TK_CONST;
     tok.keywords["let"] = TK_LET;
-    tok.keywords["proc"] = TK_PROC;
+    tok.keywords["define"] = TK_DEFINE;
     tok.keywords["return"] = TK_RETURN;
     tok.keywords["struct"] = TK_STRUCT;
     tok.keywords["enum"] = TK_ENUM;

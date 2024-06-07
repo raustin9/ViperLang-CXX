@@ -787,7 +787,7 @@ ResultNode Parser::parse_struct_member() {
                 return result::Ok(field_node);
             }
             break;
-        case TK_PROC: {
+        case TK_DEFINE: {
             ResultNode r_method_node = parse_procedure();
             if (r_method_node.is_err()) {
                 error_msgs.push_back(
@@ -884,13 +884,13 @@ ResultNode Parser::parse_procedure() {
     
     // Get the 'proc' token 
     token proc_token = m_current_token;
-    auto r_proc =  eat(TK_PROC);
+    auto r_proc =  eat(TK_DEFINE);
     if (r_proc.is_err()) {
         auto proc_err = r_proc.unwrap_err();
         error_msgs.push_back(proc_err);
     }
     token proc_tok = r_proc.unwrap_or(
-        token::create_new(TK_PROC, "__%internal_proc_err", m_current_token.line_num)
+        token::create_new(TK_DEFINE, "__%internal_proc_err", m_current_token.line_num)
     );
    
     // Eat the identifier
@@ -995,7 +995,7 @@ std::shared_ptr<AST> Parser::parse() {
     /* Parse at the top level  of file */
 //    while (m_current_token.kind != TK_EOF) {
 //        switch (m_current_token.kind) {
-//            case TK_PROC: {
+//            case TK_DEFINE: {
 //                auto node = parse_procedure().unwrap();
 //                m_ast->add_node(node);
 //            } break;
@@ -1030,7 +1030,7 @@ std::optional<ASTNode*> Parser::parse_top_level_statement() {
 
 
     switch (m_current_token.kind) {
-        case TK_PROC: {
+        case TK_DEFINE: {
             auto node = parse_procedure().unwrap();
             m_ast->add_node(node);
             return node;

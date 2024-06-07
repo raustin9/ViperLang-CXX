@@ -33,12 +33,13 @@ void TestManager::run_tests() {
         auto test_duration = std::chrono::duration<double, std::chrono::seconds::period>(test_finish - test_start).count();
         
         if (result) {
+            std::printf("\x1b[32m[PASSED]: %s\n\x1b[0m", m_tests[i].description.c_str());
             passed++;
         } else if (result == BYPASS) {
-            std::printf("[SKIPPED]: %s\n", m_tests[i].description.c_str());
+            std::printf("\x1b[36m[SKIPPED]: %s\n\x1b[0m", m_tests[i].description.c_str());
             ++skipped;
         } else {
-            std::printf("[FAILED]: %s\n", m_tests[i].description.c_str());
+            std::printf("\x1b[31m[FAILED]: %s\n\x1b[0m", m_tests[i].description.c_str());
             ++failed;
         }
 
@@ -49,11 +50,11 @@ void TestManager::run_tests() {
 
         total_time += test_duration;
 
-        std::printf("%s Executed %lu of %lu (skipped %lu) (%.6lf sec / %.6lf sec total)\n",
-                status,
+        std::printf("Executed %lu of %lu (skipped %lu) %s (%.6lf sec / %.6lf sec total)\n",
                 i+1,
                 count,
                 skipped,
+                status,
                 test_duration,
                 total_time
         );
